@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>漢方重要処方 学習ゲーム</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kampo: {
+                            bg: '#fbf9f4',
+                            card: '#ffffff',
+                            primary: '#1e3a2b',
+                            primaryLight: '#2d5a43',
+                            accent: '#c2410c',
+                            gold: '#b45309',
+                            muted: '#6b7280',
+                            paper: '#f4efe6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f7f4ed;
+            color: #1f2937;
+            -webkit-tap-highlight-color: transparent;
+            font-feature-settings: "palt";
+        }
+        .washi-pattern {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#e5decf 0.75px, transparent 0.75px), radial-gradient(#e5decf 0.75px, #fdfbf7 0.75px);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+        }
+        .btn-press {
+            transition: all 0.15s ease;
+        }
+        .btn-press:active {
+            transform: scale(0.97);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="washi-pattern min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-200 selection:text-emerald-900">
+
+    <!-- ヘッダー -->
+    <header class="bg-kampo-primary text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <button id="nav-home-btn" onclick="showScreen('home-screen')" class="flex items-center gap-2 font-bold text-lg tracking-wide hover:opacity-90 transition">
+                <span class="text-2xl">🌿</span>
+                <span>漢方極意図鑑</span>
+            </button>
+            <div class="flex items-center gap-2">
+                <span id="header-unlocked-badge" class="bg-amber-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-inner">
+                    図鑑 0/64
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主コンテンツ領域 -->
+    <main class="max-w-md mx-auto w-full flex-1 p-4 pb-12">
+
+        <!-- 1. ホーム画面 -->
+        <section id="home-screen" class="space-y-5">
+            <!-- ヒーローバナー -->
+            <div class="bg-gradient-to-br from-emerald-900 via-kampo-primary to-emerald-800 text-white p-5 rounded-2xl shadow-lg border border-emerald-700 relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 text-8xl opacity-10 font-serif select-none pointer-events-none">漢方</div>
+                <h1 class="text-xl font-extrabold tracking-wide mb-1">薬学生のための漢方重要処方</h1>
+                <p class="text-xs text-emerald-100 opacity-90 mb-3">国試・CBT頻出の64処方を完全マスター！問題を解いて図鑑を完成させよう。</p>
+                
+                <!-- 進捗ミニバー -->
+                <div class="bg-black/20 backdrop-blur-sm p-3 rounded-xl border border-white/10">
+                    <div class="flex justify-between text-xs font-medium mb-1">
+                        <span>図鑑解放率</span>
+                        <span id="home-progress-text">0 / 64 処方 (0%)</span>
+                    </div>
+                    <div class="w-full bg-emerald-950/60 rounded-full h-2.5 overflow-hidden">
+                        <div id="home-progress-bar" class="bg-amber-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p id="home-progress-sub" class="text-[11px] text-amber-200 mt-1.5 font-medium">あと 64 処方でコンプリート！</p>
+                </div>
+            </div>
+
+            <!-- モード選択1: 患者症例 → 処方 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold text-lg">🩺</span>
+                    <div>
+                        <h2 class="font-bold text-stone-800 text-base">患者症例 → 処方</h2>
+                        <p class="text-xs text-stone-500">主訴・虚実・寒熱・随伴症状から適当な処方を選択</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 mt-3">
+                    <button onclick="startQuiz('case', 1)" class="btn-press bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 p-3 rounded-xl font-semibold text-sm flex flex-col items-center justify-center gap-1 shadow-sm">
+                        <span class="text-xs text-emerald-700 bg-emerald-200 px-2 py-0.5 rounded-full">基本</span>
+                        <span>Lv1：代表的症候</span>
+                    </button>
+                    <button onclick="startQuiz('case', 2)" class="btn-press bg-emerald-800 hover:bg-emerald-900 text-white p-3 rounded-xl font-semibold text-sm flex flex-col items-center justify-center gap-1 shadow-md">
+                        <span class="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">応用</span>
+                        <span>Lv2：臨床鑑別問題</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- モード選択2: 生薬・原典 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="p-2 bg-amber-100 text-amber-800 rounded-xl font-bold text-lg">📜</span>
+                    <div>
+                        <h2 class="font-bold text-stone-800 text-base">生薬・原典 モード</h2>
+                        <p class="text-xs text-stone-500">構成生薬、配合生薬の役割、傷寒論などの原典知識</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 mt-3">
+                    <button onclick="startQuiz('herbs', 1)" class="btn-press bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 p-3 rounded-xl font-semibold text-sm flex flex-col items-center justify-center gap-1 shadow-sm">
+                        <span class="text-xs text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full">基本</span>
+                        <span>Lv1：構成生薬・原典</span>
+                    </button>
+                    <button onclick="startQuiz('herbs', 2)" class="btn-press bg-amber-700 hover:bg-amber-800 text-white p-3 rounded-xl font-semibold text-sm flex flex-col items-center justify-center gap-1 shadow-md">
+                        <span class="text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">応用</span>
+                        <span>Lv2：比較・深耕問</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 復習・図鑑・記録へのショートカット -->
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="openReviewMenu()" class="btn-press bg-white hover:bg-rose-50 border border-rose-200 text-rose-900 p-3.5 rounded-2xl shadow-sm text-left flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-rose-600 font-bold mb-0.5">弱点克服</div>
+                        <div class="font-bold text-sm">間違えた問題</div>
+                    </div>
+                    <span class="text-2xl">🔄</span>
+                </button>
+                <button onclick="showScreen('enc-screen')" class="btn-press bg-white hover:bg-teal-50 border border-teal-200 text-teal-900 p-3.5 rounded-2xl shadow-sm text-left flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-teal-600 font-bold mb-0.5">全64処方収録</div>
+                        <div class="font-bold text-sm">漢方図鑑を見る</div>
+                    </div>
+                    <span class="text-2xl">📖</span>
+                </button>
+            </div>
+
+            <!-- 記録 & シェア -->
+            <div class="flex items-center gap-2">
+                <button onclick="showScreen('stats-screen')" class="flex-1 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 p-3 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-2">
+                    <span>📊 学習記録を見る</span>
+                </button>
+                <button onclick="shareApp()" class="bg-stone-800 hover:bg-stone-900 text-white p-3 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <span>🔗 共有</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 復習選択モーダル/画面 -->
+        <section id="review-menu-screen" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <button onclick="showScreen('home-screen')" class="text-sm font-bold text-stone-600 flex items-center gap-1">
+                    ← ホームへ戻る
+                </button>
+                <h2 class="font-bold text-stone-800 text-lg">復習モード</h2>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
+                <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 leading-relaxed">
+                    苦手な問題を選択して集中的に解くことができます。何度も復習して完全記憶を目指しましょう！
+                </div>
+
+                <button onclick="startReviewQuiz('recent')" id="review-recent-btn" class="w-full btn-press bg-rose-600 hover:bg-rose-700 text-white p-4 rounded-xl text-left shadow-md flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-base">直前セッションの間違い</div>
+                        <div class="text-xs text-rose-100 mt-0.5" id="review-recent-count">今回間違えた問題: 0件</div>
+                    </div>
+                    <span class="text-2xl">⚡</span>
+                </button>
+
+                <button onclick="startReviewQuiz('all')" id="review-all-btn" class="w-full btn-press bg-stone-800 hover:bg-stone-900 text-white p-4 rounded-xl text-left shadow-md flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-base">累計の間違いリスト</div>
+                        <div class="text-xs text-stone-300 mt-0.5" id="review-all-count">過去の間違い累積: 0件</div>
+                    </div>
+                    <span class="text-2xl">📚</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. クイズ画面 -->
+        <section id="quiz-screen" class="hidden space-y-4">
+            <!-- プログレスバー & ヘッダー -->
+            <div class="flex items-center justify-between text-xs font-semibold text-stone-600 bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
+                <button onclick="confirmExitQuiz()" class="text-stone-400 hover:text-stone-700">✕ 中断</button>
+                <span id="quiz-mode-tag" class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">患者症例 Lv1</span>
+                <span id="quiz-progress-text">問題 1 / 5</span>
+                <span id="quiz-combo-badge" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-bold">🔥 0 連続正解</span>
+            </div>
+
+            <!-- 問題カード -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-3">
+                <div class="flex items-center justify-between text-xs text-stone-400 border-b border-stone-100 pb-2">
+                    <span id="quiz-target-cat">【発表剤】</span>
+                    <span id="quiz-question-type">症例判別</span>
+                </div>
+                <p id="quiz-question-stem" class="text-stone-800 text-sm font-medium leading-relaxed pt-1">
+                    問題文がここに入ります。
+                </p>
+            </div>
+
+            <!-- 選択肢リスト -->
+            <div id="quiz-options-container" class="space-y-2.5">
+                <!-- JavaScriptで生成 -->
+            </div>
+
+            <!-- 解答後の解説カード (初期非表示) -->
+            <div id="quiz-explanation-card" class="hidden bg-white rounded-2xl shadow-lg border border-stone-200 overflow-hidden space-y-0">
+                <div id="quiz-result-header" class="p-3 text-center font-bold text-white text-base">
+                    正解！
+                </div>
+                <div class="p-4 space-y-3 text-xs leading-relaxed">
+                    <!-- 解放アラート -->
+                    <div id="quiz-unlock-alert" class="hidden bg-amber-50 border border-amber-300 text-amber-900 p-2.5 rounded-xl font-bold text-center animate-bounce">
+                        🎉 新しい漢方図鑑が解放されました！
+                    </div>
+
+                    <div>
+                        <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">【正解の判断根拠】</span>
+                        <p id="quiz-exp-reason" class="mt-1 text-stone-700 leading-normal"></p>
+                    </div>
+
+                    <div>
+                        <span class="font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">【類似処方との鑑別・選択肢解説】</span>
+                        <p id="quiz-exp-diff" class="mt-1 text-stone-700 leading-normal whitespace-pre-line"></p>
+                    </div>
+
+                    <div>
+                        <span class="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">【覚えるポイント】</span>
+                        <p id="quiz-exp-key" class="mt-1 text-stone-700 leading-normal font-medium"></p>
+                    </div>
+
+                    <button onclick="nextQuestion()" class="w-full btn-press bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-3 rounded-xl text-sm shadow-md mt-2">
+                        次の問題へ進む →
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 漢方図鑑画面 -->
+        <section id="enc-screen" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <button onclick="showScreen('home-screen')" class="text-sm font-bold text-stone-600 flex items-center gap-1">
+                    ← ホーム
+                </button>
+                <h2 class="font-bold text-stone-800 text-lg">漢方図鑑 (全64処方)</h2>
+            </div>
+
+            <!-- 検索 & フィルター -->
+            <div class="space-y-2">
+                <input type="text" id="enc-search-input" oninput="renderEncyclopedia()" placeholder="処方名・生薬名・症状で検索..." class="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2.5 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-sm">
+                
+                <div class="flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar text-xs">
+                    <button onclick="setEncFilter('ALL')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-emerald-800 text-white">すべて</button>
+                    <button onclick="setEncFilter('UNLOCKED')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">解放済み</button>
+                    <button onclick="setEncFilter('発表剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">発表剤</button>
+                    <button onclick="setEncFilter('清熱剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">清熱剤</button>
+                    <button onclick="setEncFilter('瀉下剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">瀉下剤</button>
+                    <button onclick="setEncFilter('温補剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">温補剤</button>
+                    <button onclick="setEncFilter('気剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">気剤</button>
+                    <button onclick="setEncFilter('補血剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">補血剤</button>
+                    <button onclick="setEncFilter('駆瘀血剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">駆瘀血剤</button>
+                    <button onclick="setEncFilter('利水剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">利水剤</button>
+                    <button onclick="setEncFilter('健胃・整腸剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">健胃・整腸剤</button>
+                    <button onclick="setEncFilter('補液強壮剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">補液強壮剤</button>
+                    <button onclick="setEncFilter('鎮咳去痰剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">鎮咳去痰剤</button>
+                    <button onclick="setEncFilter('筋肉・関節鎮痛剤')" class="enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700">筋肉・関節</button>
+                </div>
+            </div>
+
+            <!-- 処方カードグリッド -->
+            <div id="enc-grid" class="grid grid-cols-2 gap-2.5">
+                <!-- JSで動的描画 -->
+            </div>
+        </section>
+
+        <!-- 処方詳細モーダル -->
+        <div id="enc-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white w-full max-w-md max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+                <!-- モーダルヘッダー -->
+                <div class="bg-kampo-primary text-white p-4 flex items-start justify-between">
+                    <div>
+                        <span id="modal-category" class="bg-emerald-800 text-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full">分類</span>
+                        <h3 id="modal-title" class="text-xl font-bold mt-1">葛根湯</h3>
+                    </div>
+                    <button onclick="closeEncModal()" class="text-white/80 hover:text-white text-xl font-bold p-1">✕</button>
+                </div>
+                <!-- モーダル本文 -->
+                <div id="modal-body" class="p-5 overflow-y-auto space-y-4 text-xs text-stone-700 custom-scrollbar">
+                    <!-- JSで詳細を挿入 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 学習記録画面 -->
+        <section id="stats-screen" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <button onclick="showScreen('home-screen')" class="text-sm font-bold text-stone-600 flex items-center gap-1">
+                    ← ホーム
+                </button>
+                <h2 class="font-bold text-stone-800 text-lg">学習データと記録</h2>
+            </div>
+
+            <!-- サマリーカード -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 grid grid-cols-2 gap-4 text-center">
+                <div class="p-3 bg-stone-50 rounded-xl">
+                    <div class="text-xs text-stone-500 font-medium">解いた問題数</div>
+                    <div id="stats-total-answered" class="text-2xl font-black text-stone-800 mt-0.5">0</div>
+                </div>
+                <div class="p-3 bg-emerald-50 rounded-xl">
+                    <div class="text-xs text-emerald-700 font-medium">通算正答率</div>
+                    <div id="stats-accuracy" class="text-2xl font-black text-emerald-800 mt-0.5">0%</div>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl">
+                    <div class="text-xs text-amber-700 font-medium">解放図鑑数</div>
+                    <div id="stats-unlocked-count" class="text-2xl font-black text-amber-800 mt-0.5">0 / 64</div>
+                </div>
+                <div class="p-3 bg-purple-50 rounded-xl">
+                    <div class="text-xs text-purple-700 font-medium">最高連続正解</div>
+                    <div id="stats-max-combo" class="text-2xl font-black text-purple-800 mt-0.5">0</div>
+                </div>
+            </div>
+
+            <!-- 苦手処方ランキング -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-stone-200 space-y-2">
+                <h3 class="font-bold text-stone-800 text-sm flex items-center gap-1.5">
+                    <span>⚠️</span> 間違いの多い処方 TOP 5
+                </h3>
+                <div id="stats-weak-list" class="space-y-1.5 pt-1 text-xs text-stone-600">
+                    <p class="text-stone-400 italic text-center py-2">データはまだありません</p>
+                </div>
+            </div>
+
+            <!-- データリセットボタン -->
+            <div class="pt-4">
+                <button onclick="resetAllData()" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 p-3 rounded-xl font-bold text-xs text-center">
+                    学習記録と解放状況をリセットする
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-stone-200 text-stone-500 text-[11px] py-3 text-center border-t border-stone-300">
+        <p>薬学生のための 漢方重要処方 64選 完全攻略</p>
+    </footer>
+
+    <script>
+        /* ----------------------------------------------------
+           漢方処方データセット (全64処方完全網羅)
+        ---------------------------------------------------- */
+        const formulaData = [
+            /* 発表剤 (9) */
+            {
+                id: "kakkonto",
+                name: "葛根湯",
+                category: "発表剤",
+                crudeDrugs: ["葛根", "麻黄", "生姜", "大棗", "桂皮", "芍薬", "甘草"],
+                effects: ["解表", "散寒", "生津", "舒筋"],
+                indications: ["感冒初期", "鼻風邪", "肩こり", "上半身の発熱性炎症"],
+                symptoms: "体力中等度以上（実証）。自然汗出なし（無汗）。悪寒、発熱、頭痛、項背部のこわばり（首筋のこわばり）。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "無汗で首・肩・背中が強くこわばる風邪初期の第一選択。葛根・麻黄を含む。",
+                relatedFormulas: "桂枝湯：有汗（汗が出る）の風邪初期に適用。\n麻黄湯：さらに激しい関節痛・咳を伴う実証。",
+                memoryTips: "カッコン（葛根）で肩こり・首のこわばりを解消！無汗の風邪。",
+                note: "出典やメーカーにより生薬重量の配合比率に微小な差がある場合があります。",
+                questions: [
+                    {
+                        id: "q_kak_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】20代男性。悪寒、発熱、頭痛があり、首筋から背中にかけて強くこわばっている。汗は全く出ておらず、体力を有する。最適な処方はどれか。",
+                        options: ["葛根湯", "桂枝湯", "小青竜湯", "麻黄附子細辛湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "発熱・悪寒・項背部のこわばり・無汗という表実証の感冒初期症状から葛根湯が最も適します。",
+                            differentials: "桂枝湯は自然汗出（有汗）がある場合、小青竜湯は水様鼻汁が著しい場合、麻黄附子細辛湯は高齢者等の虚寒証の感冒用です。",
+                            keyPoint: "「無汗」＋「項背部拘急（首筋のこわばり）」＝ 葛根湯！"
+                        }
+                    },
+                    {
+                        id: "q_kak_2",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】葛根湯と桂枝湯の臨床上の違いとして正しいものはどれか。",
+                        options: ["葛根湯は有汗、桂枝湯は無汗に適す", "葛根湯は麻黄を含み無汗に適し、桂枝湯は麻黄を含まず有汗に適す", "葛根湯は虚証用、桂枝湯は実証用である", "葛根湯は下痢を起こしやすく桂枝湯は便秘を起こしやすい"],
+                        answerIndex: 1,
+                        explanation: {
+                            reason: "葛根湯は桂枝湯の構成（桂皮・芍薬・生姜・大棗・甘草）に「葛根」と「麻黄」を加えたもので、麻黄の発汗作用により無汗の実証に適します。",
+                            differentials: "桂枝湯は麻黄を含まないため、既に汗が出ている虚証～中等度（表虚証）に用いられます。",
+                            keyPoint: "葛根湯 ＝ 桂枝湯 ＋ 葛根 ＋ 麻黄"
+                        }
+                    },
+                    {
+                        id: "q_kak_3",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【生薬・原典】葛根湯の原典として正しいものはどれか。",
+                        options: ["傷寒論・金匱要略", "和剤局方", "万病回春", "本草綱目"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "葛根湯は漢方の古典である『傷寒論』および『金匱要略』に収載されています。",
+                            differentials: "和剤局方（十全大補湯など）、万病回春（抑肝散など）も頻出原典です。",
+                            keyPoint: "傷寒論・金匱要略は張仲景によって編纂された急性熱病・雑病の聖典。"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "keishito",
+                name: "桂枝湯",
+                category: "発表剤",
+                crudeDrugs: ["桂皮", "芍薬", "生姜", "大棗", "甘草"],
+                effects: ["解肌", "調和営衛"],
+                indications: ["感冒初期", "神経痛", "頭痛"],
+                symptoms: "体力虚弱～中等度（虚証～中間）。自然汗出（じわっと汗が出る）、悪風（風にあたると寒がる）、頭痛、発熱。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "麻黄を含まない。表虚証の感冒初期。すべての解表剤の基本となる基本処方。",
+                relatedFormulas: "葛根湯：桂枝湯に葛根・麻黄を加えた無汗用。\n小建中湯：桂枝湯の芍薬を倍増し膠飴を加えた補益剤。",
+                memoryTips: "けいし（桂枝）は汗ばむ風邪初期に優しく効く。",
+                note: "一般的な構成生薬です。",
+                questions: [
+                    {
+                        id: "q_kei_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】体力がやや虚弱な患者。風邪の引き始めで、頭痛、微熱があり、じんわりと自然に汗が出ている。風にあたるとぞくっと寒気を感じる。最も適切な処方はどれか。",
+                        options: ["桂枝湯", "麻黄湯", "葛根湯", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "体力が虚弱～中等度で、「自然汗出（有汗）」、「悪風」を認める表虚証の風邪初期には桂枝湯が適します。",
+                            differentials: "麻黄湯・葛根湯は無汗の実証患者用です。大柴胡湯は体力の充実した実証の便秘・肝胆系疾患用です。",
+                            keyPoint: "「自然汗出（有汗）」を見たら桂枝湯！"
+                        }
+                    },
+                    {
+                        id: "q_kei_2",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【生薬】桂枝湯の構成生薬に含まれないものはどれか。",
+                        options: ["桂皮", "芍薬", "麻黄", "甘草"],
+                        answerIndex: 2,
+                        explanation: {
+                            reason: "桂枝湯は「桂皮・芍薬・生姜・大棗・甘草」の5味からなり、発汗・興奮作用の強い「麻黄」は含まれません。",
+                            differentials: "麻黄を含まないため体力が低下した患者にも安心して使用できます。",
+                            keyPoint: "桂枝湯には麻黄が入っていない！"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shoseiryuto",
+                name: "小青竜湯",
+                category: "発表剤",
+                crudeDrugs: ["麻黄", "芍薬", "乾姜", "甘草", "細辛", "桂皮", "五味子", "半夏"],
+                effects: ["解表散寒", "温肺化飲"],
+                indications: ["気管支炎", "気管支ぜんそく", "鼻炎", "アレルギー性鼻炎", "むくみ"],
+                symptoms: "体力中等度（中間証）。水様のうすい痰や鼻汁、くしゃみ、喘鳴、咳。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "「水様性の鼻汁・痰」が最大のキーワード。花粉症・アレルギー性鼻炎の第一選択。",
+                relatedFormulas: "麻杏甘石湯：激しい咳・開口呼吸・粘稠な黄痰（熱証）。\n麻黄湯：風邪初期の関節痛・高熱。",
+                memoryTips: "小青竜は「水鼻水・透明なサラサラ痰」を青龍が乾かすイメージ！",
+                note: "製剤によって配合バランスが微妙に異なる場合があります。",
+                questions: [
+                    {
+                        id: "q_sho_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】春先に無色透明で水のようなサラサラとした鼻水とくしゃみが止まらない患者。咳や喘鳴も伴う。最も適した処方はどれか。",
+                        options: ["小青竜湯", "辛夷清肺湯", "麦門冬湯", "黄連解毒湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「水様の薄い鼻水・痰」は水飲（水滞）と寒証のサインであり、小青竜湯が第一選択となります。",
+                            differentials: "辛夷清肺湯は黄色い粘稠鼻汁・鼻づまり用（熱証）。麦門冬湯は乾性でコンコン出る激しい咳用。",
+                            keyPoint: "「水様性の鼻汁・くしゃみ」＝ 小青竜湯！"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "maoto",
+                name: "麻黄湯",
+                category: "発表剤",
+                crudeDrugs: ["麻黄", "桂皮", "杏仁", "甘草"],
+                effects: ["発汗解表", "宣肺平喘"],
+                indications: ["感冒", "インフルエンザ初期", "気管支炎", "関節痛"],
+                symptoms: "体力が充実している（強い実証）。悪寒、高熱、ふしぶしの痛み（関節痛）、無汗、喘鳴を伴う咳。",
+                originalText: "傷寒論",
+                keyPoints: "強い発汗・発散作用。高熱と激しい節々の痛みを伴うインフルエンザ初期。",
+                relatedFormulas: "葛根湯：肩こり・首筋のこわばり。\n麻黄附子細辛湯：高齢者や体力の衰えた人の冷えを伴う感冒。",
+                memoryTips: "麻黄湯はガチガチ実証の節々痛む高熱風邪！",
+                note: "一般的な4生薬で構成されます。",
+                questions: [
+                    {
+                        id: "q_mao_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】体力充実した若年男性。インフルエンザにかかり、高熱、強い悪寒、全身の節々の激しい痛みを訴える。汗は出ていない。適切な処方はどれか。",
+                        options: ["麻黄湯", "桂枝湯", "真武湯", "当帰芍薬散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "体力充実（実証）で高熱、無汗、激しい関節痛を認める感染初期には麻黄湯が適します。",
+                            differentials: "桂枝湯は虚証・有汗用。真武湯は冷えと代謝低下のある極度の虚証用。",
+                            keyPoint: "「強い実証」＋「高熱・関節痛・無汗」＝ 麻黄湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "maobushisaishinto",
+                name: "麻黄附子細辛湯",
+                category: "発表剤",
+                crudeDrugs: ["麻黄", "附子", "細辛"],
+                effects: ["助陽解表"],
+                indications: ["感冒", "気管支炎"],
+                symptoms: "体力が著しく低下（虚寒証）。強い冷え、手足の冷たさを伴う風邪初期。微熱または発熱はあるが活気がなく寒がりが強い。",
+                originalText: "傷寒論",
+                keyPoints: "高齢者や虚弱者の感冒。温陽薬（附子）と温肺（細辛）に麻黄を組み合わせた少陰病期処方。",
+                relatedFormulas: "麻黄湯：実証の強い高熱・節々痛。\n桂枝湯：虚証の有汗用。",
+                memoryTips: "麻黄・附子・細辛で、お年寄りの冷え冷え風邪を温めて治す！",
+                note: "加工附子の安全な基準配合となっています。",
+                questions: [
+                    {
+                        id: "q_mbs_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】80歳女性。体が非常に冷えて手足が冷たく、ぞくぞくと寒気を感じて元気がない風邪初期。体力が極めて虚弱。最適な処方はどれか。",
+                        options: ["麻黄附子細辛湯", "麻黄湯", "防風通聖散", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "高齢者や極度の虚寒証（冷え・衰弱）を伴う風邪初期には、附子で陽気を補いつつ解表する麻黄附子細辛湯が最も適します。",
+                            differentials: "麻黄湯や防風通聖散、大柴胡湯は実証用であり虚弱な高齢者には禁忌・不適です。",
+                            keyPoint: "「高齢者・虚寒証」＋「冷えの強い風邪初期」＝ 麻黄附子細辛湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "jumidoidonto",
+                name: "十味敗毒湯",
+                category: "発表剤",
+                crudeDrugs: ["柴胡", "桔梗", "川芎", "茯苓", "防風", "独活", "甘草", "生姜", "朴樨（又は桜皮）", "荊芥"],
+                effects: ["解表", "祛風", "化湿", "清熱"],
+                indications: ["化膿性皮膚疾患", "急性湿疹", "じんま疹", "水虫"],
+                symptoms: "体力中等度。皮膚の赤み、腫れ、化膿、掻痒（かゆみ）のある皮膚疾患初期。",
+                originalText: "華岡青洲創方（万病回春の駆風解毒湯などを改変）",
+                keyPoints: "日本独自（華岡青洲）の処方。皮膚の化膿・湿疹の初期に汎用される皮膚科の基本薬。",
+                relatedFormulas: "消風散：より分泌物（汁）が多くかゆみが激しい慢性の湿疹。\n黄連解毒湯：より赤みが強く熱感のある皮膚炎。",
+                memoryTips: "華岡青洲が作った「十（10）の生薬で皮膚の毒を敗る（破る）」薬！",
+                note: "日本国内では桜皮（オウヒ）または朴樨（ボクソク）が配合されます。",
+                questions: [
+                    {
+                        id: "q_jumi_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【原典】十味敗毒湯の創方者として正しい人物はどれか。",
+                        options: ["華岡青洲", "曲直瀬道三", "吉益東洞", "浅田宗伯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "十味敗毒湯は江戸時代の名医・華岡青洲が『万病回春』の駆風解毒湯を基に創方した和製漢方です。",
+                            differentials: "曲直瀬道三は後世派の祖、吉益東洞は古方派の代表、浅田宗伯は幕末の漢方医です。",
+                            keyPoint: "十味敗毒湯 ＝ 江戸時代の華岡青洲による創方！"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kufugedokuto",
+                name: "駆風解毒湯",
+                category: "発表剤",
+                crudeDrugs: ["防風", "防己", "荊芥", "羌活", "牛蒡子", "桔梗", "石膏", "甘草"],
+                effects: ["疏風清熱", "解毒利咽"],
+                indications: ["咽喉痛", "扁桃炎"],
+                symptoms: "体力中等度以上。喉（のど）が赤く腫れて激しく痛む。",
+                originalText: "万病回春",
+                keyPoints: "うがいをしながらゆっくり飲む（含うがい）ことで局所の炎症を鎮める喉の処方。",
+                relatedFormulas: "甘草湯：急性期の単純な喉の痛み。\n桔梗湯：喉の腫れと排膿。",
+                memoryTips: "風を駆除して咽喉の毒を解く！うがい服用が特徴。",
+                note: "駆風解毒散として水でうがいしながら服用することが多いです。",
+                questions: [
+                    {
+                        id: "q_kufu_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】のどの激しい赤みと腫れ・痛みを訴える患者。口に含んでうがいをしながらゆっくり飲む服用方法が指導される漢方薬はどれか。",
+                        options: ["駆風解毒湯", "葛根湯", "半夏厚朴湯", "五苓散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "駆風解毒湯（散）は咽喉炎・扁桃炎に対し、唾液や局所粘膜に浸透させるため「含うがい服用」が行われます。",
+                            differentials: "他の処方は通常の水・温湯での服用が基本です。",
+                            keyPoint: "「喉の腫れ痛」＋「うがい服用」＝ 駆風解毒湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shiniseihaito",
+                name: "辛夷清肺湯",
+                category: "発表剤",
+                crudeDrugs: ["辛夷", "知母", "百合", "黄芩", "山梔子", "麦門冬", "石膏", "枇杷葉", "升麻"],
+                effects: ["清熱化痰", "宣通鼻竅"],
+                indications: ["鼻づまり", "慢性鼻炎", "蓄膿症（副鼻腔炎）"],
+                symptoms: "体力中等度。鼻汁が黄色くドロドロしている（熱証）、鼻づまりがひどい、熱感を伴う。",
+                originalText: "外科正宗",
+                keyPoints: "慢性鼻炎や副鼻腔炎の黄鼻汁・ドロドロ鼻水・鼻づまりに対する清熱第一選択薬。",
+                relatedFormulas: "小青竜湯：透明でサラサラした水様鼻汁（寒証）。",
+                memoryTips: "辛夷（シンイ）＋清肺（熱を冷ます）＝ 膿んだドロドロ黄色鼻水をクリアに！",
+                note: "清熱生薬（黄芩・山梔子・石膏）が多く含まれます。",
+                questions: [
+                    {
+                        id: "q_ssp_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】副鼻腔炎でドロドロした黄色い鼻汁と強い鼻づまりを認める患者。小青竜湯ではなく辛夷清肺湯を選ぶべき理由はどれか。",
+                        options: ["水様性の薄い鼻汁ではなく、ドロドロした粘稠・黄色の熱証鼻汁だから", "患者が冷え症だから", "全身の激しい関節痛を伴うから", "便秘を解消するため"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "小青竜湯は「寒・水飲（サラサラ透明鼻水）」に適し、辛夷清肺湯は「熱・粘稠（ドロドロ黄色鼻汁・鼻づまり）」に適します。",
+                            differentials: "寒熱の判定が漢方鼻炎治療の最重要鑑別点です。",
+                            keyPoint: "サラサラ水鼻水＝小青竜湯 / ドロドロ黄鼻水＝辛夷清肺湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shofusan",
+                name: "消風散",
+                category: "発表剤",
+                crudeDrugs: ["当帰", "生地黄", "防風", "蝉退", "知母", "苦参", "胡麻", "荊芥", "蒼朮", "牛蒡子", "石膏", "木通", "甘草"],
+                effects: ["疏風養血", "清熱化湿"],
+                indications: ["湿疹", "皮膚炎", "アトピー性皮膚炎", "じんま疹", "水虫"],
+                symptoms: "体力中等度。分泌物（ジュクジュクした汁）が多く、かゆみが非常に強い湿疹。夏場に悪化しやすい。",
+                originalText: "外科正宗",
+                keyPoints: "ジュクジュクした浸出液が強く、痒みが激しい皮膚炎。蝉退（セミの抜け殻）や苦参を含む。",
+                relatedFormulas: "十味敗毒湯：化膿初期・化膿傾向の強い皮膚炎。\n当帰飲子：乾燥してカサカサしたかゆみ（風燥）。",
+                memoryTips: "風（かゆみ）を消し去る消風散！ジュクジュク痒い皮膚炎に。",
+                note: "生薬数が13種類と多く含まれます。",
+                questions: [
+                    {
+                        id: "q_sho_p1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】強い痒みがあり、掻くとジュクジュクとした分泌物（浸出液）が出るアトピー性皮膚炎の患者。夜間温まると痒みが増悪する。最適な処方はどれか。",
+                        options: ["消風散", "当帰飲子", "人参湯", "桂枝加朮附湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「強烈なかゆみ」＋「ジュクジュクした浸出液（湿）」＋「熱感」という特徴から消風散が適します。",
+                            differentials: "当帰飲子は乾燥（カサカサ）したかゆみ用です。",
+                            keyPoint: "ジュクジュク浸出液 ＋ 激しい痒み ＝ 消風散"
+                        }
+                    }
+                ]
+            },
+
+            /* 清熱剤 (5) */
+            {
+                id: "byakkokanin jinto",
+                name: "白虎加人参湯",
+                category: "清熱剤",
+                crudeDrugs: ["知母", "石膏", "甘草", "粳米", "人参"],
+                effects: ["清熱写火", "生津止渇"],
+                indications: ["口渇", "ほてり", "湿疹", "皮膚炎", "熱中症"],
+                symptoms: "体力中等度以上（実熱証）。激しい喉の渇き（口渇）、多飲、顔面紅潮、強い汗、ほてり。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "石膏＋知母で強烈な体内熱を冷却。激しい喉の乾きと熱感が標的。",
+                relatedFormulas: "黄連解毒湯：全身の炎症・のぼせ・精神不安。\n五苓散：口渇はあるが水逆（飲むと吐く、または尿が出ない）。",
+                memoryTips: "白い虎（石膏）が冷やし、人参が潤す！激しい口渇・ほてり。",
+                note: "粳米（ウルチマイ）が含まれるのが特徴的です。",
+                questions: [
+                    {
+                        id: "q_byak_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】皮膚が赤くほてり、喉が激しく渇いて水を大量に飲みたがる患者。発汗が多く全身に強い熱感がある。最も適した処方はどれか。",
+                        options: ["白虎加人参湯", "真武湯", "苓姜朮甘湯", "補中益気湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "激しい口渇（多飲）、ほてり、発汗を伴う陽明病の実熱証には、石膏を含む白虎加人参湯が最適です。",
+                            differentials: "真武湯や苓姜朮甘湯は冷え（寒証）に対する処方です。",
+                            keyPoint: "「激しい口渇・多飲」＋「強い熱感・ほてり」＝ 白虎加人参湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "orenkedokuto",
+                name: "黄連解毒湯",
+                category: "清熱剤",
+                crudeDrugs: ["黄連", "黄芩", "黄柏", "山梔子"],
+                effects: ["瀉火解毒"],
+                indications: ["鼻血", "高血圧ののぼせ", "不眠", "胃炎", "二日酔い", "皮膚炎"],
+                symptoms: "体力中等度以上（実証）。のぼせ気味で顔面紅潮、いらいら、不眠、出血傾向、胃のむかつき。",
+                originalText: "外台秘要",
+                keyPoints: "オール清熱生薬（三黄＋山梔子）。苦味が強く、体内の熱・炎症・出血・興奮を抑える代表的清熱剤。",
+                relatedFormulas: "三黄瀉心湯：黄連解毒湯の黄柏を大黄に代えたもの（便秘を伴うのぼせ）。",
+                memoryTips: "黄連・黄芩・黄柏・山梔子！4つの黄・黄色生薬で熱毒を消す！",
+                note: "非常に苦味が強い処方です。",
+                questions: [
+                    {
+                        id: "q_ore_1",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【生薬】黄連解毒湯を構成する4つの生薬として正しい組み合わせはどれか。",
+                        options: [
+                            "黄連・黄芩・黄柏・山梔子",
+                            "黄連・黄芩・大黄・石膏",
+                            "黄連・当帰・芍薬・川芎",
+                            "黄柏・知母・人参・甘草"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "黄連解毒湯は黄連・黄芩・黄柏・山梔子の4味で構成される基本清熱剤です。",
+                            differentials: "黄柏の代わりに大黄を入れると三黄瀉心湯になります。",
+                            keyPoint: "黄連・黄芩・黄柏 ＋ 山梔子 ＝ 黄連解毒湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shosaikoto",
+                name: "小柴胡湯",
+                category: "清熱剤",
+                crudeDrugs: ["柴胡", "黄芩", "半夏", "生姜", "大棗", "人参", "甘草"],
+                effects: ["和解少陽"],
+                indications: ["慢性肝炎", "感冒後期", "胃炎", "食欲不振"],
+                symptoms: "体力中等度（中間証）。往来寒熱（寒気と熱が交互に来る）、胸脇苦満（みぞおちから肋骨下部の苦しさ）、口の苦み、食欲不振、吐き気。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "少陽病期の代表処方。柴胡＋黄芩（柴胡剤）で胸脇苦満を治す。インターフェロン併用禁忌（間質性肺炎リスク）。",
+                relatedFormulas: "大柴胡湯：実証・便秘を伴う。\n柴胡桂枝湯：桂枝湯との合方で表証の残る場合。",
+                memoryTips: "小柴胡湯は「往来寒熱・胸脇苦満」の少陽病！",
+                note: "間質性肺炎の副作用注意喚起が重要な処方です。",
+                questions: [
+                    {
+                        id: "q_sho_s1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】風邪をこじらせて数日経過。寒気と発熱が交互に現れ（往来寒熱）、みぞおちから肋骨下部にかけて張った苦しさ（胸脇苦満）があり、口が苦く食欲がない。最適な処方はどれか。",
+                        options: ["小柴胡湯", "葛根湯", "五苓散", "八味地黄丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「往来寒熱」および「胸脇苦満」は少陽病の典型症状であり、小柴胡湯が最も適します。",
+                            differentials: "葛根湯は太陽病初期（発熱・無汗・項背部こわばり）に適します。",
+                            keyPoint: "「往来寒熱」＋「胸脇苦満」＝ 小柴胡湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "daisaikoto",
+                name: "大柴胡湯",
+                category: "清熱剤",
+                crudeDrugs: ["柴胡", "黄芩", "芍薬", "半夏", "生姜", "枳実", "大黄", "大棗"],
+                effects: ["和解少陽", "内瀉熱結"],
+                indications: ["胆のう炎", "高血圧の肥満", "便秘", "胃炎"],
+                symptoms: "体力が充実（がっしりした実証）。強い胸脇苦満、便秘傾向、みぞおちの硬い閊え（心下急）。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "実証の柴胡剤。大黄・枳実を含むため瀉下作用（便通促進）がある。",
+                relatedFormulas: "小柴胡湯：中間証で便秘なし、人参・甘草を含む。\n防風通聖散：太鼓腹の全身肥満用。",
+                memoryTips: "大柴胡湯は大黄が入ってガチガチ実証の便秘・胸脇苦満！",
+                note: "小柴胡湯から人参・甘草を除き、大黄・枳実・芍薬を加えた構成。",
+                questions: [
+                    {
+                        id: "q_dai_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】小柴胡湯と大柴胡湯の鑑別点として適切なものはどれか。",
+                        options: [
+                            "大柴胡湯は体力が充実した実証で便秘を伴い、大黄を含んでいる",
+                            "小柴胡湯は大黄を含み便秘に適する",
+                            "大柴胡湯は虚証で下痢傾向の患者に用いられる",
+                            "小柴胡湯には柴胡が含まれていない"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "大柴胡湯は大黄・枳実が配合されており、体力が充実した（実証）便秘傾向の胸脇苦満に使用します。",
+                            differentials: "小柴胡湯は人参・甘草を含み中間証向けで、大黄は含みません。",
+                            keyPoint: "大柴胡湯 ＝ 実証 ＋ 胸脇苦満 ＋ 便秘（大黄含有）"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "saikokeishito",
+                name: "柴胡桂枝湯",
+                category: "清熱剤",
+                crudeDrugs: ["柴胡", "黄芩", "半夏", "生姜", "大棗", "人参", "甘草", "桂皮", "芍薬"],
+                effects: ["和解少陽", "調和営衛"],
+                indications: ["胃腸炎", "感冒中期・慢性期", "神経症"],
+                symptoms: "体力中等度。発熱・悪寒（表証）と、胸脇苦満・吐き気・みぞおちの障害（少陽病）が同時に見られる。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "小柴胡湯と桂枝湯の合方（半々）。太陽病から少陽病への移行期。",
+                relatedFormulas: "小柴胡湯：少陽病単独。\n桂枝湯：太陽病単独。",
+                memoryTips: "柴胡桂枝湯 ＝ 小柴胡湯 ＋ 桂枝湯！中間地点の風邪。",
+                note: "二処方が合方された代表例です。",
+                questions: [
+                    {
+                        id: "q_skt_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【生薬・構成】柴胡桂枝湯はどの2つの基本処方を合わせた（合方）ものか。",
+                        options: ["小柴胡湯 ＋ 桂枝湯", "大柴胡湯 ＋ 葛根湯", "小柴胡湯 ＋ 麻黄湯", "柴胡加竜骨牡蠣湯 ＋ 桂枝湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "柴胡桂枝湯はその名の通り「小柴胡湯」と「桂枝湯」を折衷・合方した処方です。",
+                            differentials: "太陽病の表証（桂枝湯）と少陽病の半表半裏証（小柴胡湯）が併在するときに用いられます。",
+                            keyPoint: "柴胡桂枝湯 ＝ 小柴胡湯 ＋ 桂枝湯"
+                        }
+                    }
+                ]
+            },
+
+            /* 瀉下剤 (4) */
+            {
+                id: "sanoushashinto",
+                name: "三黄瀉心湯",
+                category: "瀉下剤",
+                crudeDrugs: ["大黄", "黄連", "黄芩"],
+                effects: ["瀉火解毒", "燥湿清熱"],
+                indications: ["高血圧ののぼせ", "不眠", "鼻血", "便秘"],
+                symptoms: "体力が充実（実証）。のぼせ、顔面紅潮、精神不安、便秘傾向。",
+                originalText: "金匱要略",
+                keyPoints: "黄連解毒湯から黄柏・山梔子を除き「大黄」を加えたもの。便秘とのぼせのある実証。",
+                relatedFormulas: "黄連解毒湯：大黄を含まず瀉下作用はない。",
+                memoryTips: "三つの「黄」（大黄・黄連・黄芩）で心火を瀉して便秘とのぼせを治す！",
+                note: "大黄の瀉下（下剤）作用に注意。",
+                questions: [
+                    {
+                        id: "q_san_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】体力充実した男性。顔が赤く熱くのぼせ、イライラして不眠を訴える。頑固な便秘を伴っている。最適な処方はどれか。",
+                        options: ["三黄瀉心湯", "黄連解毒湯", "補中益気湯", "当帰芍薬散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「のぼせ・精神興奮（熱証）」に「便秘」を伴う実証患者には、大黄を含む三黄瀉心湯が適します。",
+                            differentials: "黄連解毒湯は便秘を伴わないのぼせに使用します。",
+                            keyPoint: "三黄瀉心湯 ＝ 黄連解毒湯タイプ ＋ 便秘（大黄）"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "bofutsushosan",
+                name: "防風通聖散",
+                category: "瀉下剤",
+                crudeDrugs: ["大黄", "芒硝", "防風", "荊芥", "麻黄", "薄荷", "生姜", "当帰", "川芎", "芍薬", "白朮", "黄芩", "桔梗", "石膏", "滑石", "甘草", "連翹"],
+                effects: ["宣通宣肺", "瀉熱通便", "利水"],
+                indications: ["肥満症", "高血圧の随伴症状（のぼせ・肩こり）", "便秘", "むくみ"],
+                symptoms: "体力が充実（太鼓腹の実証）。腹部に皮下脂肪が多く、便秘がちで発汗・利尿が不十分。",
+                originalText: "宣明論",
+                keyPoints: "18種類の生薬（大黄・芒硝の発汗・利尿・便通の三充療法）。「ナイシトール」等で有名。",
+                relatedFormulas: "防已黄耆湯：色白でぽちゃぽちゃした水太り（虚証）。",
+                memoryTips: "防風通聖散はがっしりデブ（実証皮下脂肪・便秘）！",
+                note: "非常に構成生薬数が多い（18種）ことで知られます。",
+                questions: [
+                    {
+                        id: "q_bof_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】体力が充実し、いわゆる太鼓腹で固い皮下脂肪が多い肥満男性。高血圧でのぼせがあり、便秘がちである。適した処方はどれか。",
+                        options: ["防風通聖散", "防已黄耆湯", "当帰芍薬散", "六君子湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "実証の脂肪太り（皮下脂肪型肥満）で便秘・のぼせを伴う場合は防風通聖散が第一選択です。",
+                            differentials: "防已黄耆湯は水太り・色白・汗かきの虚証用です。",
+                            keyPoint: "固い太鼓腹・実証肥満・便秘 ＝ 防風通聖散"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "mashiningan",
+                name: "麻子仁丸",
+                category: "瀉下剤",
+                crudeDrugs: ["麻子仁", "芍薬", "枳実", "厚朴", "大黄", "杏仁"],
+                effects: ["潤腸通便"],
+                indications: ["便秘（老人性便秘、習慣性便秘）"],
+                symptoms: "体力中等度以下または虚弱（特に高齢者）。コロコロした硬い便（兎糞状便）、乾燥した便性。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "麻子仁・杏仁の植物油脂成分で腸を潤して排便を促す。高齢者のコロコロ便に最適。",
+                relatedFormulas: "大承気湯：激しい実証の便秘。\n乙字湯：痔を伴う便秘。",
+                memoryTips: "麻子仁（ゴマのような油脂）でコロコロ兎糞便をすべらせ排出！",
+                note: "大黄の配合量は比較的穏やかです。",
+                questions: [
+                    {
+                        id: "q_mas_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】75歳女性。腸管が乾燥し、うさぎのフンのようなコロコロとした硬い便が出にくくて悩んでいる。お腹の張りもある。最適な潤腸瀉下剤はどれか。",
+                        options: ["麻子仁丸", "大承気湯", "五苓散", "十全大補湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "高齢者の腸管乾燥によるコロコロ便（兎糞状便）には、麻子仁・杏仁で腸を潤す麻子仁丸が最も適します。",
+                            differentials: "大承気湯は激しい熱実証の頑固な便秘用です。",
+                            keyPoint: "「高齢者・乾燥」＋「コロコロ兎糞便」＝ 麻子仁丸"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "otsujito",
+                name: "乙字湯",
+                category: "瀉下剤",
+                crudeDrugs: ["当帰", "柴胡", "黄芩", "甘草", "升麻", "大黄"],
+                effects: ["清熱涼血", "昇提", "通便"],
+                indications: ["痔核（いぼ痔）", "切れ痔", "便秘"],
+                symptoms: "体力中等度以上。痔の痛み、出血、便秘傾向。",
+                originalText: "原南陽（日本創方）",
+                keyPoints: "日本の江戸時代の医家・原南陽の創方。痔疾患のファーストライン。",
+                relatedFormulas: "桃核承気湯：激しい瘀血と精神症状のある月経障害・便秘。",
+                memoryTips: "おつじ（乙字）の「お」は「おしり（痔）」の「お」！",
+                note: "升麻・柴胡による昇提作用（脱肛を防ぐ）を含みます。",
+                questions: [
+                    {
+                        id: "q_ots_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】便秘がちで排便時にいぼ痔が痛み、出血を伴う患者。肛門部のうっ血と痛みを改善したい。最適な処方はどれか。",
+                        options: ["乙字湯", "葛根湯", "半夏瀉心湯", "猪苓湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "痔核（いぼ痔）・切れ痔で便秘傾向の症状に対する第一選択薬は乙字湯です。",
+                            differentials: "乙字湯は原南陽が創方した痔の専門処方です。",
+                            keyPoint: "「痔の痛み・出血」＋「便秘」＝ 乙字湯"
+                        }
+                    }
+                ]
+            },
+
+            /* 温補剤 (3) */
+            {
+                id: "shimbuto",
+                name: "真武湯",
+                category: "温補剤",
+                crudeDrugs: ["茯苓", "芍薬", "白朮", "生姜", "附子"],
+                effects: ["温陽利水"],
+                indications: ["新陳代謝機能低下", "冷え症", "慢性下痢", "めまい", "むくみ"],
+                symptoms: "体力が著しく低下（虚寒証）。手足が冷え、下痢しやすく、ふわふわするめまい（動悸・水滞）がある。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "附子＋茯苓・白朮で腎陽・脾陽を温め冷えと水毒を去る。極度の虚寒証のめまい・下痢。",
+                relatedFormulas: "苓桂朮甘湯：立ちくらみ（起立性めまい）、体力中等度。\n人参湯：胃腸の冷え・下痢（附子は入らない）。",
+                memoryTips: "真武（玄武＝水神）を温める附子が入った冷えめまい・下痢の薬！",
+                note: "玄武湯と呼ばれていたものが改称された経緯があります。",
+                questions: [
+                    {
+                        id: "q_shi_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】高齢で極めて体力が低下し、全身が冷えて手足が冷たい。水様性の下痢を繰り返し、身体がふわふわ揺れるようなめまいを訴える。適切な処方はどれか。",
+                        options: ["真武湯", "五苓散", "黄連解毒湯", "防風通聖散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "著しい虚寒証（冷え・代謝低下）による浮遊性めまいと下痢には、附子を含む真武湯が適します。",
+                            differentials: "五苓散は冷えの強さを問わない水滞用で、真武湯ほど温める力はありません。",
+                            keyPoint: "「極度の虚寒（冷え）」＋「ふわふわめまい・下痢」＝ 真武湯（附子含有）"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "ryokyojukanto",
+                name: "苓姜朮甘湯",
+                category: "温補剤",
+                crudeDrugs: ["茯苓", "乾姜", "白朮", "甘草"],
+                effects: ["温中散寒", "健脾利湿"],
+                indications: ["腰痛", "腰の冷え", "夜尿症"],
+                symptoms: "体力中等度以下。腰から下が水に浸かっているように冷えて重痛み、腰冷・尿量増加がある。",
+                originalText: "金匱要略",
+                keyPoints: "「腰から下の強い冷えと重痛（腰に帯五千銭を帯びるがごとし）」がキーワード。",
+                relatedFormulas: "牛車腎気丸：高齢者の痺れ・排尿障害を伴う腰痛。",
+                memoryTips: "腰が水に浸かったように冷えて重い＝苓姜朮甘湯（甘草乾姜茯苓白朮）！",
+                note: "別名：甘草乾姜茯苓白朮湯。",
+                questions: [
+                    {
+                        id: "q_ryo_k1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】「腰から下がまるで冷たい水に浸かっているように冷えて重痛い」と訴える患者。利尿傾向がある。最適な処方はどれか。",
+                        options: ["苓姜朮甘湯", "疎経活血湯", "芍薬甘草湯", "桃核承気湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "金匱要略に「腰以下冷痛、腰重きこと水中に坐するがごとし」と記載される腰の極度の冷え重痛には苓姜朮甘湯が特効を示します。",
+                            differentials: "疎経活血湯は夜間増悪する神経痛・関節痛用です。",
+                            keyPoint: "腰から下が水に浸かった冷え重痛み ＝ 苓姜朮甘湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "saikokeishikankyoto",
+                name: "柴胡桂枝乾姜湯",
+                category: "温補剤",
+                crudeDrugs: ["柴胡", "桂皮", "乾姜", "瓜呂根", "黄芩", "牡蠣", "甘草"],
+                effects: ["和解少陽", "温中生津"],
+                indications: ["更年期障害", "神経症", "不眠", "感冒の後の衰弱"],
+                symptoms: "体力が虚弱（虚証）。冷えのぼせ（頭はのぼせて足は冷える）、動悸、息切れ、神経過敏、口渇。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "虚証の柴胡剤。冷えのぼせがあり、神経質で寝汗をかく患者に用いられる。",
+                relatedFormulas: "加味逍遥散：血虚を伴う虚熱・いらいら・更年期障害。",
+                memoryTips: "頭は熱く足は冷たい「冷えのぼせ」貧弱さんの柴胡剤！",
+                note: "乾姜で温め、瓜呂根で生津潤燥する巧みな構成。",
+                questions: [
+                    {
+                        id: "q_sgk_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】体力虚弱な女性。足先は冷えるのに頭や顔がのぼせ、動悸、口渇、神経過敏があり不眠を訴える。適した処方はどれか。",
+                        options: ["柴胡桂枝乾姜湯", "大柴胡湯", "黄連解毒湯", "麻黄湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "体力虚弱者の「冷えのぼせ」・神経過敏・口渇を伴う状態には柴胡桂枝乾姜湯が適合します。",
+                            differentials: "大柴胡湯や黄連解毒湯は実証用です。",
+                            keyPoint: "虚証 ＋ 冷えのぼせ ＋ 神経過敏 ＝ 柴胡桂枝乾姜湯"
+                        }
+                    }
+                ]
+            },
+
+            /* 気剤 (7) */
+            {
+                id: "hangeshobokuto",
+                name: "半夏厚朴湯",
+                category: "気剤",
+                crudeDrugs: ["半夏", "厚朴", "茯苓", "生姜", "蘇葉"],
+                effects: ["行気開鬱", "降逆化痰"],
+                indications: ["ヒステリー球（梅核気）", "神経性胃炎", "つわり", "咳"],
+                symptoms: "体力中等度。喉に何か引っかかっているような異物感（咽喉頭異常感症、梅核気）があるが、飲み込んでも吐き出しても取れない。気分がふさぎ込む。",
+                originalText: "金匱要略",
+                keyPoints: "気鬱・気逆（気の滞り）を解消する代表的気剤。「喉の異物感（梅核気）」がキーワード。",
+                relatedFormulas: "柴朴湯：半夏厚朴湯と小柴胡湯の合方（喘息・咳）。",
+                memoryTips: "半夏厚朴湯は「喉に梅の種が詰まった感じ（梅核気）」！",
+                note: "蘇葉（シソの葉）が気の巡りを良くします。",
+                questions: [
+                    {
+                        id: "q_han_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】30代女性。気分がふさぎがちで、「喉に何か塊や異物が詰まっている感じがするが、検査では異常がない」と訴える。最適な処方はどれか。",
+                        options: ["半夏厚朴湯", "葛根湯", "安中散", "六味地黄丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "咽喉頭異常感症（ヒステリー球、漢方でいう梅核気・咽中梗塞）に対する第一選択薬は半夏厚朴湯です。",
+                            differentials: "気うつを蘇葉や厚朴で巡らせて喉の不快感を去ります。",
+                            keyPoint: "「喉の異物感（梅核気）」＝ 半夏厚朴湯！"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "ryokeijukanto",
+                name: "苓桂朮甘湯",
+                category: "気剤",
+                crudeDrugs: ["茯苓", "桂皮", "白朮", "甘草"],
+                effects: ["健脾利湿", "温陽化飲"],
+                indications: ["立ちくらみ", "めまい", "動悸", "神経症", "頭痛"],
+                symptoms: "体力中等度以下（虚～中間）。起立時の立ちくらみ（起立性調節障害）、めまい、動悸、頭重感。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "「水上衝（気が上に行きめまい・動悸を起こす）」に対する基本処方。立ちくらみの特効薬。",
+                relatedFormulas: "真武湯：高齢で冷えの激しいふわふわめまい。\n半夏白朮天麻湯：胃腸が弱く頭痛を伴うめまい。",
+                memoryTips: "立ち上がって「クラッ」ときたら苓桂朮甘湯！",
+                note: "4つの生薬（茯苓・桂皮・白朮・甘草）で構成。",
+                questions: [
+                    {
+                        id: "q_ryo_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】高校生。朝起き上がったときや急に立ち上がったときに強い立ちくらみと動悸、クラクラするめまいを感じる。最適な処方はどれか。",
+                        options: ["苓桂朮甘湯", "黄連解毒湯", "大黄甘草湯", "桃核承気湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "起立性調節障害や立ちくらみ・めまい・動悸（水上衝）には苓桂朮甘湯が最適です。",
+                            differentials: "黄連解毒湯はのぼせ・赤顔用です。",
+                            keyPoint: "「急な立ちくらみ・動悸・めまい」＝ 苓桂朮甘湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kambakudaisoto",
+                name: "甘麦大棗湯",
+                category: "気剤",
+                crudeDrugs: ["甘草", "小麦", "大棗"],
+                effects: ["養心安神", "和中緩急"],
+                indications: ["夜泣き", "ひつけ", "ヒステリー", "こむら返り"],
+                symptoms: "体力虚弱。感情のコントロールが効かず激しく泣き叫ぶ、ひきつけ、急性の興奮発作。",
+                originalText: "金匱要略",
+                keyPoints: "3つの食品に近い安全な生薬（甘草・小麦・大棗）。小児の夜泣きや急なヒステリー発作。",
+                relatedFormulas: "抑肝散：神経過敏・怒りっぽい小児の夜泣き・イライラ。",
+                memoryTips: "甘草・小麦・大棗でお菓子のように甘く心を鎮める！小児の夜泣き。",
+                note: "安全性が高く味が甘いのが特徴です。",
+                questions: [
+                    {
+                        id: "q_kam_1",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【生薬】甘麦大棗湯の構成生薬として正しい3つの組み合わせはどれか。",
+                        options: ["甘草・小麦・大棗", "甘草・生姜・大棗", "人参・白朮・甘草", "桂皮・芍薬・甘草"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "甘麦大棗湯は字の通り「甘草」「小麦（ショウムギ）」「大棗（タイソウ）」の3味で構成されます。",
+                            differentials: "食品としても身近な生薬のみから成り立ちます。",
+                            keyPoint: "甘麦大棗湯 ＝ 甘草 ＋ 小麦 ＋ 大棗"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "saikokaryukotsuboreito",
+                name: "柴胡加竜骨牡蠣湯",
+                category: "気剤",
+                crudeDrugs: ["柴胡", "黄芩", "半夏", "生姜", "大棗", "人参", "茯苓", "桂皮", "竜骨", "牡蠣"],
+                effects: ["和解少陽", "重鎮安神"],
+                indications: ["高血圧の随伴症状（動悸、不眠、不安）", "神経症"],
+                symptoms: "体力が充実（実証）。精神不安、不眠、臍上の動悸（お腹の動悸）、イライラ、驚きやすい。",
+                originalText: "傷寒論",
+                keyPoints: "実証の精神不安・不眠。竜骨・牡蠣（カルシウム）による重鎮安神（鎮静）作用。",
+                relatedFormulas: "桂枝加竜骨牡蛎湯：虚証の不眠・神経過敏・夢精。",
+                memoryTips: "ガッシリ実証で心臓がバクバク不眠なら柴胡加竜骨牡蠣湯！",
+                note: "メーカーにより大黄が加わる場合があります。",
+                questions: [
+                    {
+                        id: "q_skr_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】精神不安や動悸、不眠を訴える患者において、柴胡加竜骨牡蠣湯と桂枝加竜骨牡蛎湯の使い分けで正しいのはどれか。",
+                        options: [
+                            "柴胡加竜骨牡蠣湯は体力が充実した実証向け、桂枝加竜骨牡蛎湯は虚証向けである",
+                            "柴胡加竜骨牡蠣湯は虚証向け、桂枝加竜骨牡蛎湯は実証向けである",
+                            "柴胡加竜骨牡蠣湯は下痢をしやすいため大黄が必須である",
+                            "両者に実虚の差はなく同じ患者に使用できる"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "柴胡加竜骨牡蠣湯は「実証（体力充実）」の精神不安に、桂枝加竜骨牡蛎湯は「虚証（体力虚弱）」の精神不安に用いられます。",
+                            differentials: "柴胡ベース＝比較的内容が実証、桂枝ベース＝虚証が鑑別の肝です。",
+                            keyPoint: "実証＝柴胡加竜骨牡蠣湯 / 虚証＝桂枝加竜骨牡蛎湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "keishikaryukotsuboreito",
+                name: "桂枝加竜骨牡蛎湯",
+                category: "気剤",
+                crudeDrugs: ["桂皮", "芍薬", "生姜", "大棗", "甘草", "竜骨", "牡蠣"],
+                effects: ["調和陰陽", "安神固精"],
+                indications: ["神経質", "不眠症", "小児夜尿症", "眼精疲労"],
+                symptoms: "体力が虚弱（虚証）。疲労しやすく、神経過敏で興奮しやすい、不眠、夢多き（多夢）、性的神経症。",
+                originalText: "金匱要略",
+                keyPoints: "桂枝湯に竜骨・牡蠣を加えたもの。虚弱な人の精神不安・繊細な神経症。",
+                relatedFormulas: "柴胡加竜骨牡蠣湯：実証の精神不安・不眠。",
+                memoryTips: "華奢で繊細な虚弱さんの不眠・神経質には桂枝加竜骨牡蛎湯！",
+                note: "桂枝湯基本骨格を含みます。",
+                questions: [
+                    {
+                        id: "q_kkr_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】桂枝加竜骨牡蛎湯は、どの基本処方に「竜骨」と「牡蠣」を加えたものか。",
+                        options: ["桂枝湯", "葛根湯", "麻黄湯", "四物湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "桂枝加竜骨牡蛎湯は名前の通り「桂枝湯」に精神鎮静作用のある生薬「竜骨」と「牡蠣」を加えた処方です。",
+                            differentials: "桂枝湯の穏やかな補益・調和作用を活かしています。",
+                            keyPoint: "桂枝加竜骨牡蛎湯 ＝ 桂枝湯 ＋ 竜骨 ＋ 牡蠣"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "chotosan",
+                name: "釣藤散",
+                category: "気剤",
+                crudeDrugs: ["釣藤鈎", "橘皮", "半夏", "麦門冬", "茯苓", "人参", "防風", "菊花", "石膏", "甘草", "生姜"],
+                effects: ["平肝熄風", "清熱化痰"],
+                indications: ["高血圧の随伴症状（頭痛・めまい）", "慢性頭痛"],
+                symptoms: "体力中等度。早朝の頭痛（朝起きると頭が痛む）、高血圧傾向、中年以降のめまい・肩こり。",
+                originalText: "本事方",
+                keyPoints: "「早朝の頭痛」が最大の臨床キーワード。釣藤鈎・菊花で頭部の興奮・血圧上昇を鎮める。",
+                relatedFormulas: "呉茱萸湯：冷えによる激しい頭痛・吐き気。\n葛根湯：首肩こりからくる筋緊張性頭痛。",
+                memoryTips: "朝起きた時の頭痛・高血圧には釣藤散！",
+                note: "釣藤鈎（チョウトウコウ）の鈎（カギ）が特徴的です。",
+                questions: [
+                    {
+                        id: "q_cho_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】50代高血圧傾向の男性。「特に毎朝起きぬけに頭痛がして、めまいや肩こりを伴う」と訴える。適した処方はどれか。",
+                        options: ["釣藤散", "麻黄湯", "当帰芍薬散", "小青竜湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "中年以降の高血圧傾向患者に見られる「早朝頭痛（朝方の頭痛）」には釣藤散が第一選択となります。",
+                            differentials: "釣藤鈎・菊花が脳血管の緊張や炎症を和らげます。",
+                            keyPoint: "「早朝の頭痛」＋「高血圧傾向」＝ 釣藤散"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "yokukansan",
+                name: "抑肝散",
+                category: "気剤",
+                crudeDrugs: ["蒼朮（又は白朮）", "茯苓", "川芎", "鈎藤", "当帰", "柴胡", "甘草"],
+                effects: ["平肝熄風", "和血舒筋"],
+                indications: ["神経症", "不眠症", "小児夜泣き", "認知症の周辺症状（BPSD）"],
+                symptoms: "体力中等度。イライラしやすい、怒りっぽい、歯ぎしり、神経過敏、筋肉の痙攣。",
+                originalText: "保嬰撮要",
+                keyPoints: "肝（興奮・怒り）を抑える。小児の夜泣き・疳の虫だけでなく、近年は「認知症のBPSD（暴言・イライラ）」に多用される。",
+                relatedFormulas: "加味逍遥散：女性の血の道症・虚熱イライラ。\n抑肝散加陳皮半夏：胃腸虚弱が加わった場合。",
+                memoryTips: "興奮・イライラ・認知症の怒りっぽさを抑（抑える）肝散！",
+                note: "認知症ガイドラインでも言及される重要処方です。",
+                questions: [
+                    {
+                        id: "q_yok_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】高齢の認知症患者。興奮しやすく、介護者に対して怒鳴ったり暴言を吐く（BPSD）行動が目立つ。イライラや神経過敏を沈めるための処方はどれか。",
+                        options: ["抑肝散", "葛根湯", "人参湯", "八味地黄丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "認知症に伴う興奮・暴言・イライラ（BPSD）や神経過敏には「肝の昂ぶり」を抑える抑肝散が推奨されます。",
+                            differentials: "八味地黄丸は腎虚（フレイル・排尿障害）向けです。",
+                            keyPoint: "イライラ・興奮・認知症BPSD ＝ 抑肝散"
+                        }
+                    }
+                ]
+            },
+
+            /* 補血剤 (7) */
+            {
+                id: "tokishakuyakusan",
+                name: "当帰芍薬散",
+                category: "補血剤",
+                crudeDrugs: ["当帰", "川芎", "芍薬", "茯苓", "白朮（又は蒼朮）", "沢瀉"],
+                effects: ["養血和営", "健脾利水"],
+                indications: ["月経不順", "冷え症", "貧血", "むくみ", "不妊症"],
+                symptoms: "体力が虚弱（虚証）。色白で痩せていて冷え症、貧血傾向、足のむくみ、下腹部痛。",
+                originalText: "金匱要略",
+                keyPoints: "婦人科疾患の絶対的代表処方（血虚＋水滞）。「色白・冷え・むくみ」の女性向け。",
+                relatedFormulas: "桂枝茯苓丸：体力がしっかりしている実証の血の道症（瘀血）。\n加味逍遥散：イライラ・のぼせなど精神症状が強い場合。",
+                memoryTips: "色白・冷え・むくみ女子には当帰芍薬散！",
+                note: "四物湯（当帰・川芎・芍薬）の一部＋利水剤（茯苓・白朮・沢瀉）の構造。",
+                questions: [
+                    {
+                        id: "q_tok_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】20代女性。体力が虚弱で色白、強い冷え症と立ちくらみ（貧血）、夕方の足のむくみ、月経不順に悩んでいる。最も適した漢方処方はどれか。",
+                        options: ["当帰芍薬散", "桂枝茯苓丸", "防風通聖散", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "虚証・色白・冷え症・むくみ・貧血傾向を伴う月経障害には当帰芍薬散が最も適します。",
+                            differentials: "桂枝茯苓丸は実証（しっかり体格・のぼせ・赤ら顔）の瘀血用です。",
+                            keyPoint: "「虚証・冷え・貧血・むくみ」＝ 当帰芍薬散"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "onshein",
+                name: "温清飲",
+                category: "補血剤",
+                crudeDrugs: ["当帰", "川芎", "芍薬", "地黄", "黄連", "黄芩", "黄柏", "山梔子"],
+                effects: ["養血清熱"],
+                indications: ["月経不順", "更年期障害", "皮膚炎", "神経症"],
+                symptoms: "体力中等度。皮膚が乾燥して色浅黒く、のぼせやイライラ感、出血傾向がある。",
+                originalText: "万病回春",
+                keyPoints: "四物湯（温める補血剤）＋ 黄連解毒湯（冷やす清熱剤）の合方。血虚熱に用いる。",
+                relatedFormulas: "加味逍遥散：虚熱と精神不安・不定愁訴。\n黄連解毒湯：実熱・出血のみ。",
+                memoryTips: "温清飲 ＝ 四物湯（温） ＋ 黄連解毒湯（清）！",
+                note: "処方名の「温」と「清」は合方由来です。",
+                questions: [
+                    {
+                        id: "q_ons_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】温清飲を構成する2つの基本処方の正しい組み合わせはどれか。",
+                        options: ["四物湯 ＋ 黄連解毒湯", "四物湯 ＋ 桂枝湯", "当帰芍薬散 ＋ 黄連解毒湯", "十全大補湯 ＋ 六君子湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "温清飲は「四物湯（当帰・川芎・芍薬・地黄）」と「黄連解毒湯（黄連・黄芩・黄柏・山梔子）」を完全に合方した処方です。",
+                            differentials: "血虚を補い（四物湯）、皮膚や体内の熱を冷まします（黄連解毒湯）。",
+                            keyPoint: "温清飲 ＝ 四物湯 ＋ 黄連解毒湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kyukikyokaito",
+                name: "芎帰膠艾湯",
+                category: "補血剤",
+                crudeDrugs: ["川芎", "当帰", "阿膠", "艾葉", "芍薬", "地黄", "甘草"],
+                effects: ["養血止血", "調経安胎"],
+                indications: ["不正性器出血", "月経過多", "痔の出血", "妊婦の出血"],
+                symptoms: "体力虚弱（虚証）。出血が続いて顔色が悪い、冷え症、貧血、下腹部痛。",
+                originalText: "金匱要略",
+                keyPoints: "四物湯に「阿膠（ロバ皮ゼラチン）」と「艾葉（ヨモギ）」などを加えた補血止血の代表薬。",
+                relatedFormulas: "三黄瀉心湯：実熱による勢いの強い出血（鼻血・血のぼせ）。",
+                memoryTips: "阿膠（アキョウ）と艾葉（ガイヨウ）で虚弱な出血をピタッと止める！",
+                note: "阿膠の止血作用が有名です。",
+                questions: [
+                    {
+                        id: "q_kyu_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】体力虚弱で冷え症の女性。不正性器出血や月経過多がダラダラと続き、貧血と疲労感が強い。止血と補血を兼ねる最適な処方はどれか。",
+                        options: ["芎帰膠艾湯", "三黄瀉心湯", "防風通聖散", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "虚証・冷え症に伴う持続性の不正出血や月経過多には、阿膠・艾葉を含む芎帰膠艾湯が適します。",
+                            differentials: "三黄瀉心湯は実熱の激しい出血用です。",
+                            keyPoint: "「虚証・冷え」＋「ダラダラ続く不正出血・補血」＝ 芎帰膠艾湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "juzendaiboto",
+                name: "十全大補湯",
+                category: "補血剤",
+                crudeDrugs: ["黄耆", "桂皮", "人参", "白朮", "茯苓", "甘草", "当帰", "川芎", "芍薬", "地黄"],
+                effects: ["気血双補"],
+                indications: ["病後・術後の体力低下", "疲労倦怠", "食欲不振", "冷え症", "貧血"],
+                symptoms: "体力が著しく低下（気血両虚）。全身倦怠感、食欲不振、手足の冷え、顔色不振（貧血）。",
+                originalText: "和剤局方",
+                keyPoints: "四君子湯（気虚）＋ 四物湯（血虚）＝ 八珍湯 に「黄耆・桂皮」を加えた完璧（十全）な気血補益剤。",
+                relatedFormulas: "補中益気湯：気虚がメインで虚熱・胃腸症状が強い（桂皮・地黄は含まない）。\n人参養栄湯：さらに咳・不眠傾向がある場合。",
+                memoryTips: "気も血も10（十全）分に大補補う！黄耆・桂皮でポカポカ元気。",
+                note: "10種類の生薬で構成されます。",
+                questions: [
+                    {
+                        id: "q_juz_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】大手術後や大病後の患者。極度に体力が衰え、貧血（血虚）と激しい疲労倦怠感・食欲不振（気虚）があり、手足が冷える。気血を全般的に補う最適な処方はどれか。",
+                        options: ["十全大補湯", "黄連解毒湯", "葛根湯", "半夏瀉心湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "気虚（疲労・食欲不振）と血虚（貧血・冷え）が同時に存在する「気血両虚」の病後衰弱には十全大補湯が適します。",
+                            differentials: "補中益気湯は気虚中心で冷えや貧血への作用は十全大補湯より控えめです。",
+                            keyPoint: "「気虚＋血虚（貧血・冷え）」＋「術後・病後の衰弱」＝ 十全大補湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shimotsuto",
+                name: "四物湯",
+                category: "補血剤",
+                crudeDrugs: ["当帰", "川芎", "芍薬", "地黄"],
+                effects: ["補血和血"],
+                indications: ["皮膚乾燥", "月経不順", "冷え症", "貧血"],
+                symptoms: "体力虚弱～中等度。皮膚がカサカサして乾燥、爪が割れやすい、月経障害、顔色が悪い。",
+                originalText: "和剤局方",
+                keyPoints: "補血剤のすべての基本骨格。当帰・川芎・芍薬・地黄の4味。胃障りを起こすことがある（地黄）。",
+                relatedFormulas: "四君子湯：補気剤の基本骨格。\n当帰芍薬散：四物湯から地黄を除き利水剤を加えたもの。",
+                memoryTips: "当帰・川芎・芍薬・地黄の「4つの物」で血を補う！",
+                note: "基本処方として超重要です。",
+                questions: [
+                    {
+                        id: "q_shim_1",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【生薬】補血の基本処方である四物湯の構成生薬（4つ）として正しいものはどれか。",
+                        options: [
+                            "当帰・川芎・芍薬・地黄",
+                            "人参・白朮・茯苓・甘草",
+                            "黄連・黄芩・黄柏・山梔子",
+                            "桂皮・芍薬・生姜・大棗"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "四物湯は「当帰」「川芎」「芍薬」「地黄」の4味から構成される補血の基本処方です。",
+                            differentials: "人参・白朮・茯苓・甘草は四君子湯（補気）です。",
+                            keyPoint: "四物湯 ＝ 当帰・川芎・芍薬・地黄"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kamikihi-to",
+                name: "加味帰脾湯",
+                category: "補血剤",
+                crudeDrugs: ["人参", "黄耆", "白朮", "茯苓", "酸棗仁", "竜眼肉", "当帰", "遠志", "甘草", "生姜", "大棗", "柴胡", "山梔子"],
+                effects: ["健脾養心", "気血双補", "清熱"],
+                indications: ["不眠症", "精神不安", "神経症", "貧血"],
+                symptoms: "体力が虚弱（虚証）。心身が疲れて貧血気味、イライラ・不安、夜眠れない（不眠）、微熱感。",
+                originalText: "済生方",
+                keyPoints: "帰脾湯（貧血＋不眠）に柴胡・山梔子（微熱・イライラを抑える）を加えた処方。「心身の疲労による不眠」に汎用。",
+                relatedFormulas: "加味逍遥散：不眠より不定愁訴・冷えのぼせ中心。",
+                memoryTips: "貧血＆心身消耗でイライラ眠れない繊細さんに加味帰脾湯！",
+                note: "遠志（オンジ）や酸棗仁を含む安神薬です。",
+                questions: [
+                    {
+                        id: "q_kkp_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】体力虚弱で貧血傾向の女性。精神的ストレスや過労から不安感が強く、夜中に何度も目が覚める不眠に悩んでいる。微熱やイライラ感もある。最適な処方はどれか。",
+                        options: ["加味帰脾湯", "三黄瀉心湯", "葛根湯", "五苓散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「貧血・虚弱（血虚）」＋「精神不安・不眠」＋「イライラ・微熱（加味の柴胡・山梔子）」には加味帰脾湯が最も適します。",
+                            differentials: "三黄瀉心湯は実証の不眠用です。",
+                            keyPoint: "「虚弱・貧血」＋「不眠・不安・イライラ」＝ 加味帰脾湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kamishoyosan",
+                name: "加味逍遥散",
+                category: "補血剤",
+                crudeDrugs: ["柴胡", "芍薬", "蒼朮（又は白朮）", "当帰", "茯苓", "山梔子", "牡丹皮", "甘草", "生姜", "薄荷"],
+                effects: ["疏肝解鬱", "健脾養血", "清熱"],
+                indications: ["更年期障害", "月経不順", "血の道症", "冷えのぼせ", "不眠症"],
+                symptoms: "体力が虚弱～中等度（虚～中間）。肩がこり、疲労しやすく、精神不安やイライラ、冷えのぼせ（顔がカーッと熱くなる）、症状がコロコロ変わる。",
+                originalText: "和剤局方",
+                keyPoints: "更年期障害の第一選択薬。「不定愁訴（訴えが変化する）」＋「イライラ・冷えのぼせ」。牡丹皮・山梔子を含む。",
+                relatedFormulas: "当帰芍薬散：冷え・むくみ（イライラやのぼせは強くない）。\n桂枝茯苓丸：実証ののぼせ・下腹部痛。",
+                memoryTips: "更年期・イライラ・コロコロ変わる不定愁訴に加味逍遥散！",
+                note: "逍遙（しょうよう）とはぶらぶら歩く＝症状が一定しない意味。",
+                questions: [
+                    {
+                        id: "q_kms_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】50代女性。更年期に入り、顔がカーッと熱くなる（のぼせ）かと思えば足が冷えたり、イライラや落ち込みなど症状が日によって変化する。最適な処方はどれか。",
+                        options: ["加味逍遥散", "麻黄湯", "大柴胡湯", "真武湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "更年期の不定愁訴（症状が変動）、イライラ、冷えのぼせには加味逍遥散が第一選択です。",
+                            differentials: "当帰芍薬散は精神症状や熱感が少なく冷え・むくみメインの場合に選ばれます。",
+                            keyPoint: "「更年期障害」＋「イライラ・冷えのぼせ・不定愁訴」＝ 加味逍遥散"
+                        }
+                    }
+                ]
+            },
+
+            /* 駆瘀血剤 (2) */
+            {
+                id: "keishibokuryokugan",
+                name: "桂枝茯苓丸",
+                category: "駆瘀血剤",
+                crudeDrugs: ["桂皮", "茯苓", "牡丹皮", "桃仁", "芍薬"],
+                effects: ["活血化瘀"],
+                indications: ["月経異常", "更年期障害", "打撲症", "しもやけ", "シミ"],
+                symptoms: "体力が中等度以上（実証～中間）。赤ら顔、のぼせやすいが足先は冷える、下腹部抵抗・圧痛（小腹急結・圧痛）。",
+                originalText: "金匱要略",
+                keyPoints: "駆瘀血剤（血の滞りを改善）の代表。桃仁＋牡丹皮が瘀血を去る。実症～中間証の女性に汎用。",
+                relatedFormulas: "桃核承気湯：より強力な実証で便秘と激しい精神症状・のぼせを伴う。\n当帰芍薬散：虚証の色白・冷え・むくみ。",
+                memoryTips: "桂枝茯苓丸は「実証・のぼせ足冷え・お腹の圧痛（瘀血）」！",
+                note: "5生薬すべてが均等配合されることが多いです。",
+                questions: [
+                    {
+                        id: "q_kbk_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】月経痛や更年期障害の女性において、当帰芍薬散と桂枝茯苓丸の鑑別として最も適切なものはどれか。",
+                        options: [
+                            "当帰芍薬散は虚証・冷え・むくみ向け、桂枝茯苓丸は比較的体力がしっかりした実証～中等度ののぼせ・瘀血向けである",
+                            "当帰芍薬散は実証向け、桂枝茯苓丸は極度の虚証向けである",
+                            "桂枝茯苓丸は下痢の患者に用いられる",
+                            "両者とも便秘治療を第一目的とする"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "当帰芍薬散（虚証・貧血・水滞・冷え）と桂枝茯苓丸（実症～中等度・赤ら顔・のぼせ・下腹部圧痛）の虚実判定が漢方鑑別の最も重要な基本です。",
+                            differentials: "桂枝茯苓丸は牡丹皮・桃仁による活血作用を有します。",
+                            keyPoint: "虚証・貧血冷え＝当帰芍薬散 / 実証～中間・のぼせ圧痛＝桂枝茯苓丸"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "tokakujokito",
+                name: "桃核承気湯",
+                category: "駆瘀血剤",
+                crudeDrugs: ["桃仁", "大黄", "桂皮", "甘草", "芒硝"],
+                effects: ["破谷下熱", "活血化瘀"],
+                indications: ["月経不順", "月経困難症", "便秘", "高血圧の随伴症状（精神不安・のぼせ）"],
+                symptoms: "体力が充実（強い実証）。激しいのぼせ、イライラ、精神の昂ぶり（狂如き症状）、頑固な便秘、左下腹部の強い圧痛。",
+                originalText: "傷寒論",
+                keyPoints: "調胃承気湯に「桃仁」と「桂皮」を加えた激しい瘀血・瀉下剤。強い便秘と精神興奮を伴う月経障害。",
+                relatedFormulas: "桂枝茯苓丸：便秘や激しい精神症状を伴わない実証の瘀血。",
+                memoryTips: "桃核（桃仁）＋承気（大黄・芒硝）で激しいのぼせ・狂乱・便秘を一気に下す！",
+                note: "芒硝・大黄を含むため強い瀉下作用に注意。",
+                questions: [
+                    {
+                        id: "q_tok_j1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】体力充実した女性。月経前に激しくのぼせ、イライラして精神的に著しく興奮する。頑固な便秘と左下腹部の強い圧痛を認める。適切な処方はどれか。",
+                        options: ["桃核承気湯", "桂枝茯苓丸", "当帰芍薬散", "六君子湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「強い実証」＋「激しいのぼせ・精神興奮」＋「便秘（大黄・芒硝適応）」には桃核承気湯が最適合します。",
+                            differentials: "桂枝茯苓丸は大黄・芒硝を含まないため便秘や激しい精神狂乱には力不足です。",
+                            keyPoint: "「実証の瘀血」＋「精神興奮・激しいのぼせ」＋「便秘」＝ 桃核承気湯"
+                        }
+                    }
+                ]
+            },
+
+            /* 利水剤 (4) */
+            {
+                id: "goreisan",
+                name: "五苓散",
+                category: "利水剤",
+                crudeDrugs: ["猪苓", "沢瀉", "白朮（又は蒼朮）", "茯苓", "桂皮"],
+                effects: ["利水滲湿", "温陽化気"],
+                indications: ["むくみ", "ネフローゼ", "二日酔い", "急性胃腸炎（下痢・吐き気）", "頭痛"],
+                symptoms: "体質（虚実）を問わず使用可能。喉が渇いて水を飲むが、尿量が少なく（口渇・尿量減少）、吐いたりむくんだりする（水逆）。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "「水分代謝の調節（利水調節）」の絶対的代表薬。「口渇 ＋ 尿量減少」が揃ったら五苓散。",
+                relatedFormulas: "猪苓湯：排尿痛・残尿感・血尿（熱証・炎症）。\n柴苓湯：小柴胡湯と五苓散の合方（ステロイド様作用・腎炎）。",
+                memoryTips: "口渇・尿量減少・二日酔い・水吐きには五苓散！",
+                note: "五生薬（猪苓・沢瀉・白朮・茯苓・桂皮）からなります。",
+                questions: [
+                    {
+                        id: "q_gor_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】お酒を飲みすぎた翌朝、激しい頭痛とむくみ、喉の渇きがある。水を飲むと胃がタポタポして吐いてしまう（水逆）。最適な利水剤はどれか。",
+                        options: ["五苓散", "黄連解毒湯", "麻黄湯", "十全大補湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "水分代謝障害（口渇、尿量減少、水逆、二日酔い・頭痛）の第一選択薬は五苓散です。",
+                            differentials: "五苓散は体の水分の偏在を正常化します。",
+                            keyPoint: "「口渇 ＋ 尿量減少（または水逆・二日酔い）」＝ 五苓散"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "choreito",
+                name: "猪苓湯",
+                category: "利水剤",
+                crudeDrugs: ["猪苓", "伏苓", "沢瀉", "阿膠", "滑石"],
+                effects: ["清熱利湿", "養陰止血"],
+                indications: ["尿路結石", "排尿痛", "残尿感", "頻尿", "血尿"],
+                symptoms: "体力中等度。排尿時の痛み（排尿痛）、残尿感、尿が濁る・血が混じる、喉の渇き。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "尿路の炎症・尿路感染症（尿道炎・膀胱炎）の特効薬。滑石（清熱）や阿膠（止血・潤い）を含む。",
+                relatedFormulas: "五苓散：桂皮を含み温める。排尿痛や血尿への作用はない。",
+                memoryTips: "猪苓湯は「排尿痛・残尿感・血尿」の尿路系トラブル！",
+                note: "阿膠・滑石を含むのが五苓散との大きな違いです。",
+                questions: [
+                    {
+                        id: "q_cho_r1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】五苓散と猪苓湯の使い分けとして正しいものはどれか。",
+                        options: [
+                            "五苓散は二日酔いや水逆などの水分代謝全般に用い、猪苓湯は排尿痛・残尿感・血尿など尿路炎症に用いる",
+                            "五苓散は血尿専用、猪苓湯は二日酔い専用である",
+                            "五苓散は阿膠を含み、猪苓湯は桂皮を含む",
+                            "両者とも全く同じ生薬で構成される"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "五苓散（桂皮含有・水上衝や二日酔い・頭痛）と猪苓湯（阿膠・滑石含有・排尿痛や血尿・残尿感などの尿路炎）の鑑別が非常に重要です。",
+                            differentials: "排尿時の痛みの有無が最大の決め手です。",
+                            keyPoint: "二日酔い・頭痛・水逆＝五苓散 / 排尿痛・血尿・残尿感＝猪苓湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "gorinsan",
+                name: "五淋散",
+                category: "利水剤",
+                crudeDrugs: ["茯苓", "当帰", "赤芍", "甘草", "山梔子", "黄芩", "地黄", "滑石", "木通", "車前子"],
+                effects: ["清熱解毒", "利湿通淋"],
+                indications: ["頻尿", "排尿痛", "残尿感", "尿濁"],
+                symptoms: "体力中等度。慢性的な排尿痛、残尿感、頻尿を繰り返す（膀胱炎の慢性期）。",
+                originalText: "和剤局方",
+                keyPoints: "「五淋（石淋・気淋・血淋など尿路障害の総称）」を治す。慢性頻尿・膀胱炎。",
+                relatedFormulas: "猪苓湯：急性期の激しい排尿痛・血尿。",
+                memoryTips: "慢性的な膀胱炎・しつこい頻尿・残尿感には五淋散！",
+                note: "山梔子・黄芩や当帰・地黄など10生薬を配合。",
+                questions: [
+                    {
+                        id: "q_gor_s1",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【原典】五淋散の原典として正しいものはどれか。",
+                        options: ["和剤局方", "傷寒論", "金匱要略", "万病回春"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "五淋散は宋代の官製薬方集である『和剤局方』に収載されています。",
+                            differentials: "五苓散や猪苓湯は傷寒論・金匱要略です。",
+                            keyPoint: "五淋散の原典 ＝ 和剤局方"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "saireito",
+                name: "柴苓湯",
+                category: "利水剤",
+                crudeDrugs: ["柴胡", "黄芩", "半夏", "生姜", "大棗", "人参", "甘草", "猪苓", "沢瀉", "白朮", "茯苓", "桂皮"],
+                effects: ["和解少陽", "利水滲湿"],
+                indications: ["急性胃腸炎", "水性下痢", "暑気あたり", "腎炎", "ネフローゼ"],
+                symptoms: "体力中等度。吐き気、食欲不振（少陽病）と、強い喉の渇き・水様性下痢・むくみ（水滞）が同時に存在する。",
+                originalText: "保命集",
+                keyPoints: "小柴胡湯 ＋ 五苓散 の合方。ステロイド様抗炎症作用や免疫調節作用が研究されている。",
+                relatedFormulas: "小柴胡湯：利水作用はない。\n五苓散：胸脇苦満や吐き気への抗炎症作用は薄い。",
+                memoryTips: "柴苓湯 ＝ 小柴胡湯 ＋ 五苓散！胃腸炎やむくみに最強合方。",
+                note: "12生薬からなる合方処方です。",
+                questions: [
+                    {
+                        id: "q_sai_r1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】柴苓湯はどの2つの処方を完全に合方したものか。",
+                        options: ["小柴胡湯 ＋ 五苓散", "大柴胡湯 ＋ 猪苓湯", "柴胡桂枝湯 ＋ 四物湯", "半夏瀉心湯 ＋ 五苓散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "柴苓湯は「小柴胡（サイ）」湯と「五苓（レイ）」散を合わせた名称および構成となっています。",
+                            differentials: "小柴胡湯の和解・抗炎症作用と五苓散の利水作用を併せ持ちます。",
+                            keyPoint: "柴苓湯 ＝ 小柴胡湯 ＋ 五苓散"
+                        }
+                    }
+                ]
+            },
+
+            /* 健胃・整腸剤 (4) */
+            {
+                id: "hangeshashinto",
+                name: "半夏瀉心湯",
+                category: "健胃・整腸剤",
+                crudeDrugs: ["半夏", "黄芩", "乾姜", "人参", "甘草", "大棗", "黄連"],
+                effects: ["寒熱平調", "消痞散結"],
+                indications: ["急・慢性胃腸炎", "神経性胃炎", "宿酔（二日酔い）", "口内炎"],
+                symptoms: "体力中等度。みぞおちが閊えて張る（心下痞硬）、ゴロゴロ鳴る腹鳴、軟便・下痢、吐き気、口内炎。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "「みぞおちの閊え（心下痞硬）」と「お腹がゴロゴロ鳴る下痢（腹鳴・下痢）」。「口内炎」にも多用。",
+                relatedFormulas: "黄連解毒湯：実熱・出血・のぼせ。\n人参湯：胃腸が冷え切った水様下痢（乾姜・人参のみ）。",
+                memoryTips: "みぞおちドロドロ・お腹ゴロゴロ下痢・口内炎に半夏瀉心湯！",
+                note: "黄芩・黄連（苦寒）と乾姜（辛温）の寒熱錯雑対応処方。",
+                questions: [
+                    {
+                        id: "q_hsst_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】ストレスでみぞおちが閊えて苦しく、お腹がゴロゴロ鳴って下痢（軟便）をする。口内炎もしばしばできる。最適な胃腸処方はどれか。",
+                        options: ["半夏瀉心湯", "葛根湯", "安中散", "八味地黄丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「心下痞硬（みぞおちのつかえ）」、「腹鳴・下痢」、「口内炎」は半夏瀉心湯の三大標的症状です。",
+                            differentials: "安中散は神経性胃炎・胃痛（冷え）向けです。",
+                            keyPoint: "みぞおちの閊え（心下痞硬）＋ 腹鳴・下痢・口内炎 ＝ 半夏瀉心湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "bukuryoin",
+                name: "茯苓飲",
+                category: "健胃・整腸剤",
+                crudeDrugs: ["茯苓", "人参", "白朮", "枳実", "橘皮", "生姜"],
+                effects: ["行気化飲", "健脾和胃"],
+                indications: ["機能性ディスペプシア", "胃炎", "胃下垂", "げっぷ"],
+                symptoms: "体力中等度以下。水や食べ物が胃に停滞してぽちゃぽちゃ鳴る（胃内停水）、ゲップ（呑酸）が出る、胸やけ。",
+                originalText: "金匱要略",
+                keyPoints: "胃の中に水が溜まり、ゲップや吐き気がある場合（四君子湯から甘草を除き、枳実・橘皮・生姜を加えた構成）。",
+                relatedFormulas: "六君子湯：茯苓飲に半夏・甘草・大棗を加えたもの（より全身疲労・食欲不振が強い）。",
+                memoryTips: "胃がポチャポチャ・ゲップ（呑酸）が出たら茯苓飲！",
+                note: "甘草を含まない珍しい補益系胃腸薬です。",
+                questions: [
+                    {
+                        id: "q_buk_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】胃腸が弱く、食後に胃を叩くとポチャポチャと音がし、酸っぱいゲップ（呑酸）や胸やけが頻繁に出る。甘草を含まない適した処方はどれか。",
+                        options: ["茯苓飲", "六君子湯", "平胃散", "甘麦大棗湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "胃内停水（ポチャポチャ音）とゲップ（呑酸・胸やけ）を主訴とし、甘草を含まない構成は茯苓飲です。",
+                            differentials: "六君子湯は甘草を含みます。",
+                            keyPoint: "胃内停水 ＋ ゲップ（呑酸） ＝ 茯苓飲"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "heiisan",
+                name: "平胃散",
+                category: "健胃・整腸剤",
+                crudeDrugs: ["蒼朮", "厚朴", "陳皮", "甘草", "生姜", "大棗"],
+                effects: ["燥湿運脾", "行気和胃"],
+                indications: ["急性・慢性胃腸炎", "消化不良", "食傷"],
+                symptoms: "体力中等度以上。食べ過ぎ・飲み過ぎでお腹が重く張り（腹満）、胃もたれ、未消化便の下痢。",
+                originalText: "和剤局方",
+                keyPoints: "「食べ過ぎ・胃もたれ・食傷」の第一選択。湿を乾燥させる（蒼朮・厚朴）。",
+                relatedFormulas: "安中散：冷えによる胃痛・神経性胃炎。\n六君子湯：食欲が全くない虚弱者の胃もたれ。",
+                memoryTips: "胃を平らに（平胃）リセット！食べ過ぎ・食もたれ・腹満。",
+                note: "和剤局方の代表的胃腸薬です。",
+                questions: [
+                    {
+                        id: "q_hei_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】暴飲暴食のあと、みぞおちや腹部がパンパンに張り（腹満）、消化不良の強い胃もたれを起こしている。適した処方はどれか。",
+                        options: ["平胃散", "補中益気湯", "当帰芍薬散", "麻黄附子細辛湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "食べ過ぎ・飲み過ぎ（食傷）による胃もたれ・腹部膨満には平胃散が適します。",
+                            differentials: "補中益気湯は虚弱者の元気を補う薬です。",
+                            keyPoint: "食べ過ぎ・暴飲暴食 ＋ 胃もたれ・腹満 ＝ 平胃散"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "anchansan",
+                name: "安中散",
+                category: "健胃・整腸剤",
+                crudeDrugs: ["桂皮", "延胡索", "牡蠣", "茴香", "甘草", "縮砂", "良姜"],
+                effects: ["温中散寒", "止痛降逆"],
+                indications: ["神経性胃炎", "慢性胃炎", "胃痛", "胸やけ"],
+                symptoms: "体力が虚弱（虚寒証）。お腹が冷えると胃痛が激しくなる、痩せ型、神経質な人の胃痛・胸やけ。",
+                originalText: "和剤局方",
+                keyPoints: "「冷え＋胃痛・胸やけ」。安中（お腹の中を安らかにする）。延胡索（鎮痛）や牡蠣（制酸）を含む。",
+                relatedFormulas: "平胃散：食べ過ぎ・実証の胃もたれ。\n半夏瀉心湯：みぞおちの閊え・下痢。",
+                memoryTips: "お腹（中）を安らげる！冷え性痩せ型さんのキーッと痛む胃痛に安中散。",
+                note: "桂皮・茴香（フェンネル）などの芳香性生薬が豊富。",
+                questions: [
+                    {
+                        id: "q_anc_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】痩せ型で冷え症の男性。仕事のストレスや冷たいものを飲んだ後に、みぞおちがキリキリ痛む（胃痛）症状がある。胃酸過多・胸やけも伴う。最適な処方はどれか。",
+                        options: ["安中散", "大柴胡湯", "防風通聖散", "黄連解毒湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "虚寒証（冷え・痩せ型）の神経性胃痛や胸やけ・胃酸過多には安中散が第一選択です。",
+                            differentials: "延胡索が強い鎮痛作用を、牡蠣が制酸作用を発揮します。",
+                            keyPoint: "「痩せ型・冷え」＋「キリキリ痛む胃痛・胸やけ」＝ 安中散"
+                        }
+                    }
+                ]
+            },
+
+            /* 補液強壮剤 (10) */
+            {
+                id: "ninjinto",
+                name: "人参湯",
+                category: "補液強壮剤",
+                crudeDrugs: ["人参", "白朮", "乾姜", "甘草"],
+                effects: ["温中健脾"],
+                indications: ["胃腸虚弱", "胃痛", "腹痛", "水様性下痢"],
+                symptoms: "体力が虚弱（太陰病虚寒証）。お腹が冷えやすく、手足が冷える、薄い唾液や尿が出る、水様下痢。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "理中丸とも呼ばれる。乾姜＋人参でお腹を強力に温めて胃腸の冷えと水様下痢を治す。",
+                relatedFormulas: "大建中湯：さらに激しいお腹の冷え・腹痛・腹部膨満・腸管蠕動異常。",
+                memoryTips: "人参・白朮・乾姜・甘草の4味で冷え切ったお腹をポカポカに！",
+                note: "別名：理中丸（りちゅうがん）。",
+                questions: [
+                    {
+                        id: "q_nin_1",
+                        mode: "herbs",
+                        level: 1,
+                        stem: "【生薬】人参湯（理中丸）を構成する4つの生薬として正しいものはどれか。",
+                        options: [
+                            "人参・白朮・乾姜・甘草",
+                            "人参・黄耆・当帰・柴胡",
+                            "人参・茯苓・白朮・甘草",
+                            "人参・桂皮・芍薬・生姜"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "人参湯は人参・白朮・乾姜・甘草の4味で構成されます。",
+                            differentials: "乾姜の代わりに茯苓を入れると四君子湯になります。",
+                            keyPoint: "人参湯 ＝ 人参 ＋ 白朮 ＋ 乾姜 ＋ 甘草"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "rikkunshito",
+                name: "六君子湯",
+                category: "補液強壮剤",
+                crudeDrugs: ["人参", "白朮", "茯苓", "甘草", "半夏", "陳皮", "生姜", "大棗"],
+                effects: ["健脾和胃", "理気化痰"],
+                indications: ["胃腸虚弱", "食欲不振", "胃もたれ", "機能性ディスペプシア（FD）"],
+                symptoms: "体力が虚弱（胃腸の気虚）。胃腸が弱く、食後に眠くなる・胃がもたれる、食欲がない、みぞおちが閊える。",
+                originalText: "万病回春",
+                keyPoints: "四君子湯（補気）＋ 二陳湯（半夏・陳皮：嘔気・痰湿除去）。胃腸虚弱・食欲不振の絶対的ファーストライン。",
+                relatedFormulas: "補中益気湯：全身の疲労感・元気が湧かない（胃腸だけでなく全身）。",
+                memoryTips: "四君子＋二陳湯＝6人の君子（六君子湯）！食欲不振・胃もたれに。",
+                note: "グレリン分泌促進作用が現代薬理で証明されています。",
+                questions: [
+                    {
+                        id: "q_rik_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】体力虚弱な患者。胃腸がとにかく弱く、少し食べただけで胃が重くもたれ、食欲がまったく湧かない。最適な補益胃腸薬はどれか。",
+                        options: ["六君子湯", "大柴胡湯", "麻黄湯", "防風通聖散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "胃腸の気虚による「食欲不振・胃もたれ・みぞおちの閊え」には六君子湯が最も適します。",
+                            differentials: "四君子湯に半夏・陳皮（二陳湯）が加わり、吐き気や胃もたれを速やかに抑えます。",
+                            keyPoint: "「胃腸虚弱」＋「食欲不振・胃もたれ」＝ 六君子湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "hochuekkito",
+                name: "補中益気湯",
+                category: "補液強壮剤",
+                crudeDrugs: ["人参", "黄耆", "白朮", "甘草", "当帰", "陳皮", "升麻", "柴胡", "生姜", "大棗"],
+                effects: ["補中益気", "昇陽挙陥"],
+                indications: ["全身倦怠感", "食欲不振", "夏ばて", "病後の体力低下", "感冒の長引くもの"],
+                symptoms: "体力が虚弱（気虚）。全身の疲労倦怠感が著しい、手足がだるい、声に力がない、日中に強い眠気がある。",
+                originalText: "内外傷弁惑論",
+                keyPoints: "「医王湯」の異名を持つ補気剤の王様。升麻・柴胡で下がった気（内臓下垂・脱肛など）を持ち上げる（昇陽挙陥）。",
+                relatedFormulas: "六君子湯：胃腸局所の症状（食欲不振・胃もたれ）がメイン。\n十全大補湯：貧血や冷え（血虚）も伴う。",
+                memoryTips: "補中益気湯は「全身のだるさ・元気が湧かない・夏バテ」の王様！",
+                note: "李東垣創方の代表処方。",
+                questions: [
+                    {
+                        id: "q_hoc_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】夏場に激しく消耗し、全身がだるくて元気が全く湧かない。声が小さくなり、日中も強い倦怠感と微熱感がある。最適な処方はどれか。",
+                        options: ["補中益気湯", "黄連解毒湯", "五苓散", "桂枝茯苓丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "全身の気虚（倦怠感、声に力がない、夏バテ、疲労）に対する基本薬は補中益気湯です。",
+                            differentials: "升麻・柴胡が気を持ち上げます。",
+                            keyPoint: "「全身の激しい疲労倦怠感・夏バテ・気虚」＝ 補中益気湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shokenchuto",
+                name: "小建中湯",
+                category: "補液強壮剤",
+                crudeDrugs: ["桂皮", "芍薬", "生姜", "大棗", "甘草", "膠飴"],
+                effects: ["温中補虚", "和中緩急"],
+                indications: ["小児虚弱体質", "小児腹痛", "夜尿症", "疲労困憊"],
+                symptoms: "体力が虚弱。痩せて顔色が悪い、頻繁にお腹が痛む（慢性腹痛）、自家中毒、疲れやすい。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "桂枝湯の芍薬を増量し「膠飴（水飴）」を加えた処方。甘くて飲みやすく小児虚弱の第一選択。",
+                relatedFormulas: "大建中湯：冷えが強く便秘・腸閉塞傾向のある成人・高齢者。",
+                memoryTips: "水飴（膠飴）が入って甘い！虚弱っ子の腹痛・体質改善に小建中湯。",
+                note: "膠飴の甘さが特徴です。",
+                questions: [
+                    {
+                        id: "q_sho_k1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】小建中湯は、桂枝湯の芍薬を増量し、さらに何の生薬（甘味成分）を加えたものか。",
+                        options: ["膠飴（コウイ）", "人参（ニンジン）", "附子（ブシ）", "芒硝（ボウショウ）"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "小建中湯は桂枝湯の芍薬量を2倍にし、モチ米や麦芽から作られる水飴「膠飴（コウイ）」を加えた処方です。",
+                            differentials: "膠飴が急激な腹痛を緩和し元気を補います。",
+                            keyPoint: "小建中湯 ＝ 桂枝湯（芍薬増量） ＋ 膠飴"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "daikenchuto",
+                name: "大建中湯",
+                category: "補液強壮剤",
+                crudeDrugs: ["蜀椒", "乾姜", "人参", "膠飴"],
+                effects: ["温中降逆", "補虚止痛"],
+                indications: ["腸閉塞（イレウス）予防", "腹部冷満", "腹痛"],
+                symptoms: "体力が著しく低下（極度の虚寒）。お腹が冷えて痛み、腹部が張って腸の動き（蠕動）が盛り上がるのが外から見える（腹中うねる）。",
+                originalText: "金匱要略",
+                keyPoints: "日本の医療用漢方で「処方数・売上第一位」を誇る。開腹手術後の腸閉塞（イレウス）予防に絶対的標準使用。",
+                relatedFormulas: "小建中湯：桂枝湯ベースで小児の慢性腹痛用。",
+                memoryTips: "大建中湯は手術後のイレウス（腸閉塞）予防ナンバーワン！",
+                note: "蜀椒（サンショウの果皮）を含みます。",
+                questions: [
+                    {
+                        id: "q_dai_k1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】消化器外科の手術後。お腹が冷えて張り、腸管の動きが著しく低下している。開腹手術後の腸閉塞（イレウス）予防に最も標準的に用いられる漢方薬はどれか。",
+                        options: ["大建中湯", "葛根湯", "黄連解毒湯", "当帰芍薬散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "術後イレウスの予防・腸管蠕動運動促進において大建中湯はエビデンスが最も豊富で第一選択となります。",
+                            differentials: "蜀椒・乾姜がお腹を温め、膠飴・人参が補益します。",
+                            keyPoint: "「お腹の冷え・張り・蠕動障害」＋「術後イレウス予防」＝ 大建中湯"
+                        }
+                    }
+                ]
+            },
+
+            {
+                id: "hachimidiojo",
+                name: "八味地黄丸",
+                category: "補液強壮剤",
+                crudeDrugs: ["地黄", "山茱萸", "山薬", "沢瀉", "茯苓", "牡丹皮", "桂皮", "附子"],
+                effects: ["補腎助陽"],
+                indications: ["夜間頻尿", "排尿困難", "かすみ目", "腰痛", "下肢冷え", "フレイル"],
+                symptoms: "体力が低下した高齢者（腎陽虚）。腰から下が冷える、夜間何度もトイレに起きる（夜間頻尿）、腰痛、目がかすむ。",
+                originalText: "金匱要略",
+                keyPoints: "六味地黄丸（六味）に「桂皮・附子」を加えて温陽作用を強化。高齢者の補腎温陽第一選択。",
+                relatedFormulas: "六味地黄丸：桂皮・附子を含まず、冷えのない腎虚・手足のほてり用。\n牛車腎気丸：八味地黄丸に牛膝・車前子を加えた痺れ・強いむくみ用。",
+                memoryTips: "高齢者の夜間尿・腰痛・下半身冷えには八味地黄丸（桂皮・附子入り）！",
+                note: "八生薬（六味＋桂皮・附子）です。",
+                questions: [
+                    {
+                        id: "q_hac_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】70代男性。下半身が冷えて腰が痛み、夜間に3～4回トイレに起きる（夜間頻尿）。目がかすむ症状もある。適した処方はどれか。",
+                        options: ["八味地黄丸", "黄連解毒湯", "小青竜湯", "天津感冒片"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "高齢者の腎陽虚症状（腰痛、下半身の冷え、夜間頻尿、かすみ目）には八味地黄丸が最適です。",
+                            differentials: "六味地黄丸は冷えがなくほてりがある場合に用いられます。",
+                            keyPoint: "「高齢者・下半身冷え」＋「腰痛・夜間頻尿」＝ 八味地黄丸"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "rokumidiojo",
+                name: "六味地黄丸",
+                category: "補液強壮剤",
+                crudeDrugs: ["地黄", "山茱萸", "山薬", "沢瀉", "茯苓", "牡丹皮"],
+                effects: ["滋陰補腎"],
+                indications: ["排尿困難", "頻尿", "むくみ", "手足のほてり"],
+                symptoms: "体力が低下（腎陰虚）。冷えはなく、むしろ手足の裏がほてり、喉が渇く、夜間汗をかく（盗汗）。",
+                originalText: "小児薬証直訣",
+                keyPoints: "八味地黄丸から「桂皮・附子」を除いたもの。熱感やほてりのある虚弱者・小児の発育不良。",
+                relatedFormulas: "八味地黄丸：冷えを伴う場合（桂皮・附子含有）。\n杞菊地黄丸：六味地黄丸に杞子・菊花を加えた目専門薬。",
+                memoryTips: "六味地黄丸は桂皮・附子なし！冷えのないほてり腎虚。",
+                note: "三補三瀉（補薬3つ・瀉薬3つ）の美しい構成。",
+                questions: [
+                    {
+                        id: "q_rok_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【鑑別】八味地黄丸と六味地黄丸の臨床上の鑑別点として適切なものはどれか。",
+                        options: [
+                            "八味地黄丸は桂皮・附子を含み下半身の冷えに適し、六味地黄丸は桂皮・附子を含まず手足のほてり等に適す",
+                            "六味地黄丸は強烈な冷えに適し、八味地黄丸はほてりに適す",
+                            "八味地黄丸は小児専用で、六味地黄丸は高齢者専用である",
+                            "六味地黄丸には地黄が含まれていない"
+                        ],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "八味地黄丸は温め生薬（桂皮・附子）が入るため「冷え」に、六味地黄丸はこれらを除くため「ほてり・乾燥（陰虚）」に適します。",
+                            differentials: "冷えの有無が絶対的な鑑別ポイントです。",
+                            keyPoint: "冷えあり＝八味地黄丸 / 冷えなし・ほてりあり＝六味地黄丸"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "kokikudiojo",
+                name: "杞菊地黄丸",
+                category: "補液強壮剤",
+                crudeDrugs: ["地黄", "山茱萸", "山薬", "沢瀉", "茯苓", "牡丹皮", "枸杞子", "菊花"],
+                effects: ["滋陰養肝", "明目"],
+                indications: ["かすみ目", "疲れ目", "視力低下", "頭重"],
+                symptoms: "体力が低下。目が疲れる、かすむ、乾燥する、のぼせ感がある。",
+                originalText: "麻科活人全書",
+                keyPoints: "六味地黄丸 ＋ 枸杞子（クコの実） ＋ 菊花（キクの花）。「目」のトラブルに特化した処方。",
+                relatedFormulas: "八味地黄丸：下半身の冷え・排尿トラブルが中心。",
+                memoryTips: "杞菊（クコとキク）で目をピカピカに！疲れ目・かすみ目。",
+                note: "目を養う肝腎同源に基づきます。",
+                questions: [
+                    {
+                        id: "q_kok_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】杞菊地黄丸は、六味地黄丸に何の2つの生薬を加えたものか。",
+                        options: ["枸杞子・菊花", "桂皮・附子", "牛膝・車前子", "当帰・川芎"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "杞菊地黄丸は六味地黄丸に「枸杞子（クコシ）」と「菊花（キクカ）」を配合したものです。",
+                            differentials: "枸杞子と菊花が視力減退や目の乾燥を改善します。",
+                            keyPoint: "杞菊地黄丸 ＝ 六味地黄丸 ＋ 枸杞子 ＋ 菊花"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "goshajinkigan",
+                name: "牛車腎気丸",
+                category: "補液強壮剤",
+                crudeDrugs: ["地黄", "山茱萸", "山薬", "沢瀉", "茯苓", "牡丹皮", "桂皮", "附子", "牛膝", "車前子"],
+                effects: ["温陽利水", "補腎強腰"],
+                indications: ["腰痛", "下肢痛", "しびれ", "むくみ", "前立腺肥大"],
+                symptoms: "体力が低下した高齢者。下半身の冷え、強いむくみ、下肢の痺れや痛み、頻尿。",
+                originalText: "済生方",
+                keyPoints: "八味地黄丸 ＋ 牛膝（下肢の痛みを和らげる） ＋ 車前子（利水）。しびれ・むくみが強い場合。",
+                relatedFormulas: "八味地黄丸：むくみや痺れは牛車腎気丸ほど強くない。",
+                memoryTips: "牛（牛膝）と車（車前子）に乗って痺れとむくみを吹き飛ばす！",
+                note: "糖尿病性神経障害の痺れにも用いられます。",
+                questions: [
+                    {
+                        id: "q_gos_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】80代男性。高齢による足腰の冷えと激しい腰痛があり、足全体の強いむくみと正座ができないほどの足の「痺れ」を訴える。最適な処方はどれか。",
+                        options: ["牛車腎気丸", "葛根湯", "小青竜湯", "平胃散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "八味地黄丸の適応（冷え・腰痛）に加えて「しびれ（牛膝）」や「強いむくみ（車前子）」がある場合は牛車腎気丸が適します。",
+                            differentials: "牛膝と車前子が追加されている点が鑑別点です。",
+                            keyPoint: "八味地黄丸の症状 ＋ 「しびれ・強いむくみ」＝ 牛車腎気丸"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "seishinrensroin",
+                name: "清心蓮子飲",
+                category: "補液強壮剤",
+                crudeDrugs: ["蓮肉", "人参", "黄耆", "赤茯苓", "車前子", "黄芩", "地骨皮", "麦門冬", "甘草"],
+                effects: ["清心利湿", "益気滋陰"],
+                indications: ["残尿感", "頻尿", "排尿痛", "全身倦怠感"],
+                symptoms: "体力が虚弱。胃腸が弱く全身がだるい、口が渇く、尿が出にくく排尿後もスッキリしない（残尿感・頻尿）。",
+                originalText: "和剤局方",
+                keyPoints: "「虚弱者の残尿感・頻尿・排尿トラブル（ユリナール等で有名）」。",
+                relatedFormulas: "猪苓湯：体力中等度、急性排尿痛・血尿。",
+                memoryTips: "清心蓮子飲は胃腸が弱く疲れている人の頻尿・残尿感！",
+                note: "蓮肉（ハスの実）が配合されています。",
+                questions: [
+                    {
+                        id: "q_sei_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】胃腸が弱く疲れやすい高齢女性。排尿後も残尿感があり、頻尿で何度もトイレに行く。口渇感や全身の倦怠感もある。適した処方はどれか。",
+                        options: ["清心蓮子飲", "麻黄湯", "防風通聖散", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "体力虚弱で胃腸障害や全身倦怠感を伴う頻尿・残尿感には清心蓮子飲が最適です（市販薬ユリナールの成分）。",
+                            differentials: "猪苓湯は虚弱や全身倦怠感がない急性尿路炎向けです。",
+                            keyPoint: "「虚弱・疲れやすい」＋「頻尿・残尿感」＝ 清心蓮子飲"
+                        }
+                    }
+                ]
+            },
+
+            /* 鎮咳去痰剤 (3) */
+            {
+                id: "makokyosekito",
+                name: "麻杏甘石湯",
+                category: "鎮咳去痰剤",
+                crudeDrugs: ["麻黄", "杏仁", "甘草", "石膏"],
+                effects: ["宣肺平喘", "清熱化痰"],
+                indications: ["小児喘息", "気管支喘息", "激しい咳"],
+                symptoms: "体力中等度以上（実熱証）。激しい咳、肩で息をするような息切れ（開口呼吸・喘鳴）、汗が多く出る、喉が渇く。",
+                originalText: "傷寒論・金匱要略",
+                keyPoints: "石膏＋麻黄の組み合わせで肺熱による激しい咳・喘息を抑える。コンコン・ゼーゼー激しい咳。",
+                relatedFormulas: "小青竜湯：水様透明鼻汁・水様痰（寒証）。\n麦門冬湯：乾いた咳（乾咳・から咳）。",
+                memoryTips: "麻・杏・甘・石の4つで激しい熱性の喘息・咳を鎮める！",
+                note: "4生薬のシンプルな名著処方。",
+                questions: [
+                    {
+                        id: "q_mks_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】小学生。気管支喘息の発作を起こし、ゼーゼーと肩で息をする激しい咳（喘鳴・開口呼吸）をしている。顔が赤く発汗があり喉が渇いている。最適な処方はどれか。",
+                        options: ["麻杏甘石湯", "麦門冬湯", "小青竜湯", "人参湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「実熱証の激しい咳・喘鳴・汗出・口渇」には石膏を含む麻杏甘石湯が第一選択となります。",
+                            differentials: "麦門冬湯は乾性のかさかさ咳（から咳）、小青竜湯は水様痰です。",
+                            keyPoint: "「激しい咳・ゼーゼー喘鳴・発汗・口渇」＝ 麻杏甘石湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "bakumondoto",
+                name: "麦門冬湯",
+                category: "鎮咳去痰剤",
+                crudeDrugs: ["麦門冬", "半夏", "人参", "甘草", "粳米", "大棗"],
+                effects: ["滋陰潤肺", "益胃降逆"],
+                indications: ["気管支炎", "気管支喘息", "から咳", "しわがれ声"],
+                symptoms: "体力中等度以下。痰が切れにくく、顔が赤くなるほどコンコンと激しく込み上げる「から咳（乾咳）」、咽頭の乾燥感。",
+                originalText: "金匱要略",
+                keyPoints: "肺陰虚（潤い不足）による「から咳」の絶対的第一選択薬。麦門冬が肺を潤す。",
+                relatedFormulas: "小青竜湯：サラサラ水様痰。\n麻杏甘石湯：実熱・汗出を伴う激しい発作的咳。",
+                memoryTips: "顔が赤くなるまでコンコン出る「から咳（乾咳）」に麦門冬湯！",
+                note: "麦門冬の配合割合が非常に高い（全体の半分以上）のが特徴です。",
+                questions: [
+                    {
+                        id: "q_bak_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】風邪のあとに咳だけが残り、痰が少なくて切れにくく、顔が赤くなるほど咽頭が乾燥してコンコンと激しく咳き込む（から咳）。最適な処方はどれか。",
+                        options: ["麦門冬湯", "小青竜湯", "葛根湯", "五苓散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "乾燥感（肺陰虚）を伴う「から咳・乾性咳嗽・顔が赤くなるほどの激しい咳」には麦門冬湯が最適です。",
+                            differentials: "麦門冬が喉と肺を潤して咳を鎮めます。",
+                            keyPoint: "「痰が切れない・喉の乾燥」＋「から咳（乾性咳嗽）」＝ 麦門冬湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "saibokuto",
+                name: "柴朴湯",
+                category: "鎮咳去痰剤",
+                crudeDrugs: ["柴胡", "黄芩", "半夏", "生姜", "大棗", "人参", "甘草", "厚朴", "茯苓", "蘇葉"],
+                effects: ["和解少陽", "降逆化痰", "宣肺平喘"],
+                indications: ["小児喘息", "気管支喘息", "咳", "不安神経症"],
+                symptoms: "体力中等度。気分がふさぎがちで、アレルギー性の咳や気管支喘息の発作を起こしやすい。",
+                originalText: "本朝経験方（小柴胡湯＋半夏厚朴湯）",
+                keyPoints: "小柴胡湯 ＋ 半夏厚朴湯 の合方。ストレスやアレルギーが関与する小児・成人の喘息や心身症的咳。",
+                relatedFormulas: "小柴胡湯：咳専用ではない。\n半夏厚朴湯：喘息発作や抗アレルギー作用は柴朴湯より控えめ。",
+                memoryTips: "柴朴湯 ＝ 小柴胡湯 ＋ 半夏厚朴湯！ストレス・小児喘息に。",
+                note: "医療用小児喘息処方としてよく使われます。",
+                questions: [
+                    {
+                        id: "q_sbt_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【構成】柴朴湯はどの2つの処方を完全に合方したものか。",
+                        options: ["小柴胡湯 ＋ 半夏厚朴湯", "大柴胡湯 ＋ 平胃散", "柴胡桂枝湯 ＋ 麦門冬湯", "小柴胡湯 ＋ 五苓散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "柴朴湯は「小柴胡（サイ）湯」と「半夏厚朴（ボク）湯」を合わせた合方処方です。",
+                            differentials: "抗炎・免疫調整作用と気うつ解除・平喘作用を兼ね備えます。",
+                            keyPoint: "柴朴湯 ＝ 小柴胡湯 ＋ 半夏厚朴湯"
+                        }
+                    }
+                ]
+            },
+
+            /* 筋肉・関節鎮痛剤 (6) */
+            {
+                id: "makoyokanto",
+                name: "麻杏薏甘湯",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["麻黄", "杏仁", "薏苡仁", "甘草"],
+                effects: ["解表祛湿", "舒筋止痛"],
+                indications: ["関節痛", "神経痛", "筋肉痛", "いぼ"],
+                symptoms: "体力中等度～充実。夕方になると痛む関節痛・筋肉痛、湿気や雨で悪化する痛み・腫れ。",
+                originalText: "金匱要略",
+                keyPoints: "麻杏甘石湯の石膏を「薏苡仁（ハトムギ）」に代えたもの。風湿による関節痛やイボに効く。",
+                relatedFormulas: "麻杏甘石湯：石膏含有で激しい咳・喘息用。\n抑角苡仁湯：さらに慢性の関節炎。",
+                memoryTips: "麻杏薏甘湯（ヨクイニン入り）で雨の日の関節痛やイボを撃退！",
+                note: "薏苡仁（ヨクイニン）が含まれるのが特徴的です。",
+                questions: [
+                    {
+                        id: "q_myg_1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【生薬・比較】麻杏甘石湯の「石膏」を「薏苡仁（ヨクイニン）」に置き換えた、関節痛やイボに用いる処方はどれか。",
+                        options: ["麻杏薏甘湯", "桂枝加朮附湯", "疎経活血湯", "五積散"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "麻杏甘石湯（麻黄・杏仁・甘草・石膏）の石膏を薏苡仁に変更したものが麻杏薏甘湯（麻黄・杏仁・薏苡仁・甘草）です。",
+                            differentials: "薏苡仁は水湿を除去し、関節痛やイボに効奏します。",
+                            keyPoint: "麻杏甘石湯（石膏→咳） / 麻杏薏甘湯（薏苡仁→関節痛・イボ）"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "keishikajutsubuto",
+                name: "桂枝加朮附湯",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["桂皮", "芍薬", "生姜", "大棗", "甘草", "蒼朮（又は白朮）", "附子"],
+                effects: ["温経散寒", "祛風除湿"],
+                indications: ["神経痛", "関節痛", "リウマチ", "肩こり"],
+                symptoms: "体力が虚弱（虚寒証）。冷えると手足や関節が痛む、汗が出やすい、手足が冷える。",
+                originalText: "吉益東洞（吉益家創方、傷寒論の桂枝加附子湯に朮を加味）",
+                keyPoints: "桂枝湯 ＋ 朮（白朮/蒼朮） ＋ 附子。冷えによって悪化する関節痛・神経痛・リウマチの温痛処方。",
+                relatedFormulas: "桂枝加附子湯：朮を含まない。\n防已黄耆湯：水太りの膝関節痛。",
+                memoryTips: "冷えると痛む関節痛・神経痛を桂枝加朮附湯の附子で温めて治す！",
+                note: "加工附子の温痛・散寒作用が中心。",
+                questions: [
+                    {
+                        id: "q_kjb_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】体力が虚弱で手足が冷える高齢者。冬場やエアコンで体が「冷えると膝関節や腰の神経痛が激しく痛む」と訴える。最適処方はどれか。",
+                        options: ["桂枝加朮附湯", "防風通聖散", "黄連解毒湯", "大柴胡湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "虚寒証（冷え）で「冷えると悪化する神経痛・関節痛」には温陽・散寒作用のある附子・朮を含む桂枝加朮附湯が適します。",
+                            differentials: "防風通聖散や黄連解毒湯は実証・熱証用です。",
+                            keyPoint: "「虚証・冷え」＋「冷えると痛む神経痛・関節痛」＝ 桂枝加朮附湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "shakuyakukanzoto",
+                name: "芍薬甘草湯",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["芍薬", "甘草"],
+                effects: ["調和肝脾", "緩急止痛"],
+                indications: ["こむら返り（足のつり）", "急激な骨格筋・平滑筋の痙攣痛", "胃痛", "胆石痛"],
+                symptoms: "体質不問（頓服可能）。足が急につる（こむら返り）、急激でおこる筋肉の激しい痙攣・痛み。",
+                originalText: "傷寒論",
+                keyPoints: "「こむら返り（足がつる）」の速効性ナンバーワン（頓服で数分で効果）。生薬2つ（芍薬・甘草）の超有名処方。",
+                relatedFormulas: "甘草の大量・長期服用による偽アルドステロン症に注意。",
+                memoryTips: "足が攣ったら（こむら返り）即芍薬甘草湯！",
+                note: "甘草の含有量が1日量で4g～6gと多いため連用に注意。",
+                questions: [
+                    {
+                        id: "q_skt_m1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】夜間に突然足の筋肉が激しく収縮し「こむら返り（足がつる）」を起こして激痛で悶絶している。即効性を期待して頓服投与する最適な処方はどれか。",
+                        options: ["芍薬甘草湯", "当帰芍薬散", "葛根湯", "六味地黄丸"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "急性のこむら返り・筋肉の痙攣痛に対する第一選択（即効性頓服薬）は芍薬甘草湯です。",
+                            differentials: "芍薬（筋肉を緩める）と甘草（急迫を緩和する）の2味のみで即効性を示します。",
+                            keyPoint: "「こむら返り（足のつり）・筋肉痙攣」＝ 芍薬甘草湯！"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "goshakusan",
+                name: "五積散",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["蒼朮", "桔梗", "枳実", "陳皮", "当帰", "川芎", "芍薬", "半夏", "厚朴", "肉桂", "乾姜", "茯苓", "麻黄", "大棗", "甘草", "生姜"],
+                effects: ["温経散寒", "理気化痰", "活血消積"],
+                indications: ["冷え症", "腰痛", "神経痛", "胃腸炎", "冷えによる諸症状"],
+                symptoms: "体力中等度以下。エアコンや冷えで全身が冷え、腰痛、肩こり、関節痛、神経痛、胃痛など多彩な冷え症状がある。",
+                originalText: "和剤局方",
+                keyPoints: "「5つの積（気・血・痰・寒・食）」を解消する16種類の生薬。冷えからくる全身の痛み・不調に汎用。",
+                relatedFormulas: "当帰四逆加呉茱萸生姜湯：手足の指先が霜やけ・凍傷になるような局所冷え痛。",
+                memoryTips: "冷えからくる万病・あらゆる痛み・5つの害を散らす五積散！",
+                note: "生薬数が16種類と防風通聖散に次ぐ多さです。",
+                questions: [
+                    {
+                        id: "q_gos_s1",
+                        mode: "herbs",
+                        level: 2,
+                        stem: "【原典・特徴】五積散が解消する「5つの積（滞り）」の組み合わせとして正しいものはどれか。",
+                        options: ["気・血・痰・寒・食", "風・寒・暑・湿・燥", "心・肝・脾・肺・腎", "気・血・水・津液・精"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "五積散の「五積」とは、体内におよぼす5つの滞り「気（気の滞り）・血（瘀血）・痰（痰飲）・寒（冷え）・食（食積）」を意味します。",
+                            differentials: "寒冷誘発の万能痛み処方です。",
+                            keyPoint: "五積散 ＝ 気・血・痰・寒・食の5つの滞りを散らす"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "boioogito",
+                name: "防已黄耆湯",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["防己", "黄耆", "白朮（又は蒼朮）", "甘草", "生姜", "大棗"],
+                effects: ["益気健脾", "利水消腫"],
+                indications: ["肥満症（水太り）", "関節痛", "むくみ", "多汗症"],
+                symptoms: "体力が虚弱（虚証）。色白でぽっちゃり（水太り）、汗をかきやすい（多汗）、膝関節の腫れ・痛み。",
+                originalText: "金匱要略",
+                keyPoints: "「色白・水太り・多汗・膝関節痛」の基本処方。黄耆が固表止汗し、防己・白朮が利水する。",
+                relatedFormulas: "防風通聖散：がっしり固い皮下脂肪太り（実証）。",
+                memoryTips: "色白ぽっちゃり水太りさんの膝の痛み・多汗に防已黄耆湯！",
+                note: "虚証肥満の代表格です。",
+                questions: [
+                    {
+                        id: "q_bot_1",
+                        mode: "case",
+                        level: 1,
+                        stem: "【症例】50代女性。体質は虚弱で色白、いわゆる「水太り」タイプ。汗をかきやすく、変形性膝関節症による膝の腫れと痛みを訴える。最適な処方はどれか。",
+                        options: ["防已黄耆湯", "防風通聖散", "大柴胡湯", "麻黄湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "「虚証・色白・水太り・多汗」に「膝関節の腫れと痛み」を伴う場合は防已黄耆湯が第一選択です。",
+                            differentials: "防風通聖散は実証太鼓腹の脂肪太り用です。",
+                            keyPoint: "「色白・水太り・多汗」＋「膝関節痛」＝ 防已黄耆湯"
+                        }
+                    }
+                ]
+            },
+            {
+                id: "sokeikakketsuto",
+                name: "疎経活血湯",
+                category: "筋肉・関節鎮痛剤",
+                crudeDrugs: ["当帰", "川芎", "地黄", "芍薬", "桃仁", "茯苓", "白朮", "甘草", "羌活", "防風", "牛膝", "威霊仙", "木通", "陳皮", "生姜", "龍胆"],
+                effects: ["疎経活血", "祛風除湿"],
+                indications: ["神経痛", "腰痛", "筋肉痛", "関節痛"],
+                symptoms: "体力中等度。冷えと血行不良があり、特に「夜間や就寝時に痛みが増悪する」下肢の神経痛・関節痛。",
+                originalText: "万病回春",
+                keyPoints: "「夜間悪化する神経痛（坐骨神経痛など）」が最大の合図。17種類の生薬で経絡の滞りと瘀血・水湿を去る。",
+                relatedFormulas: "桂枝加朮附湯：冷えによる温痛メイン（夜間特異的ではない）。",
+                memoryTips: "夜寝ると痛む坐骨神経痛・下肢痛には疎経活血湯！",
+                note: "構成生薬が17種類と極めて多いのが特徴です。",
+                questions: [
+                    {
+                        id: "q_skk_1",
+                        mode: "case",
+                        level: 2,
+                        stem: "【症例】60代男性。慢性的な坐骨神経痛があり、特に「夜間布団に入ると下肢がシクシク痛んで目が覚める」と訴える。血行障害と水湿が関与する最適処方はどれか。",
+                        options: ["疎経活血湯", "葛根湯", "半夏瀉心湯", "小青竜湯"],
+                        answerIndex: 0,
+                        explanation: {
+                            reason: "下肢の神経痛で「夜間に痛みが強くなる（夜間増悪）」という特徴的標的症状には疎経活血湯が特効を示します。",
+                            differentials: "当帰・川芎・桃仁（活血）と羌活・防風・威霊仙（痛みを止める）が配合されています。",
+                            keyPoint: "「下肢神経痛」＋「夜間に痛みが強くなる」＝ 疎経活血湯"
+                        }
+                    }
+                ]
+            }
+        ];
+
+        /* ----------------------------------------------------
+           アプリケーション状態管理 & localStorage制御
+        ---------------------------------------------------- */
+        let appState = {
+            unlockedFormulas: [], // 解放済み処方IDのリスト
+            answeredCount: 0,
+            correctCount: 0,
+            currentCombo: 0,
+            maxCombo: 0,
+            recentWrongQuestions: [], // 今回のセッションで間違えた問題ID
+            allWrongQuestions: {}, // 過去の間違い蓄積 { qId: wrongCount }
+            formulaStats: {} // { formulaId: { correct: 0, wrong: 0 } }
+        };
+
+        let currentQuizSession = {
+            questions: [],
+            currentIndex: 0,
+            sessionWrongs: [],
+            mode: '',
+            level: 1
+        };
+
+        let encCurrentFilter = 'ALL';
+
+        // 初期化処理
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            updateHeaderBadge();
+            updateHomeProgress();
+            renderEncyclopedia();
+        });
+
+        function loadUserData() {
+            try {
+                const data = localStorage.getItem('kampo_game_user_data');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    appState = { ...appState, ...parsed };
+                }
+            } catch (e) {
+                console.error("Failed to load user data:", e);
+            }
+        }
+
+        function saveUserData() {
+            try {
+                localStorage.setItem('kampo_game_user_data', JSON.stringify(appState));
+                updateHeaderBadge();
+                updateHomeProgress();
+            } catch (e) {
+                console.error("Failed to save user data:", e);
+            }
+        }
+
+        function resetAllData() {
+            if (confirm("これまでの学習記録と図鑑解放データがすべて消去されます。本当によろしいですか？")) {
+                localStorage.removeItem('kampo_game_user_data');
+                appState = {
+                    unlockedFormulas: [],
+                    answeredCount: 0,
+                    correctCount: 0,
+                    currentCombo: 0,
+                    maxCombo: 0,
+                    recentWrongQuestions: [],
+                    allWrongQuestions: {},
+                    formulaStats: {}
+                };
+                saveUserData();
+                renderEncyclopedia();
+                showScreen('home-screen');
+                alert("学習記録をすべてリセットしました。");
+            }
+        }
+
+        /* ----------------------------------------------------
+           画面遷移制御
+        ---------------------------------------------------- */
+        function showScreen(screenId) {
+            const screens = ['home-screen', 'review-menu-screen', 'quiz-screen', 'enc-screen', 'stats-screen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id === screenId) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                }
+            });
+
+            if (screenId === 'enc-screen') {
+                renderEncyclopedia();
+            } else if (screenId === 'stats-screen') {
+                renderStatsScreen();
+            } else if (screenId === 'home-screen') {
+                updateHomeProgress();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateHeaderBadge() {
+            const unlockedCount = appState.unlockedFormulas.length;
+            const badge = document.getElementById('header-unlocked-badge');
+            if (badge) {
+                badge.innerText = `図鑑 ${unlockedCount}/64`;
+            }
+        }
+
+        function updateHomeProgress() {
+            const count = appState.unlockedFormulas.length;
+            const pct = Math.round((count / 64) * 100);
+            
+            const textEl = document.getElementById('home-progress-text');
+            const barEl = document.getElementById('home-progress-bar');
+            const subEl = document.getElementById('home-progress-sub');
+
+            if (textEl) textEl.innerText = `${count} / 64 処方 (${pct}%)`;
+            if (barEl) barEl.style.width = `${pct}%`;
+            if (subEl) {
+                const remain = 64 - count;
+                subEl.innerText = remain === 0 ? "🎉 全64処方コンプリート達成！素晴らしい！" : `あと ${remain} 処方でコンプリート！`;
+            }
+        }
+
+        /* ----------------------------------------------------
+           クイズ生成 & 実行ロジック
+        ---------------------------------------------------- */
+        function getAllQuestions() {
+            let list = [];
+            formulaData.forEach(f => {
+                if (f.questions && Array.isArray(f.questions)) {
+                    f.questions.forEach(q => {
+                        list.push({ ...q, formulaId: f.id, formulaName: f.name, category: f.category });
+                    });
+                }
+            });
+            return list;
+        }
+
+        function startQuiz(mode, level) {
+            const allQ = getAllQuestions();
+            const filtered = allQ.filter(q => q.mode === mode && q.level === level);
+
+            if (filtered.length === 0) {
+                alert("該当する問題がありません。");
+                return;
+            }
+
+            // シャッフル
+            const shuffled = [...filtered].sort(() => Math.random() - 0.5).slice(0, 5);
+
+            currentQuizSession = {
+                questions: shuffled,
+                currentIndex: 0,
+                sessionWrongs: [],
+                mode: mode === 'case' ? `患者症例 Lv${level}` : `生薬・原典 Lv${level}`,
+                level: level
+            };
+
+            showScreen('quiz-screen');
+            renderQuestion();
+        }
+
+        function openReviewMenu() {
+            const recentCount = appState.recentWrongQuestions.length;
+            const allCount = Object.keys(appState.allWrongQuestions).length;
+
+            document.getElementById('review-recent-count').innerText = `今回（直前セッション）間違えた問題: ${recentCount}件`;
+            document.getElementById('review-all-count').innerText = `過去の間違い累積: ${allCount}件`;
+
+            showScreen('review-menu-screen');
+        }
+
+        function startReviewQuiz(type) {
+            const allQ = getAllQuestions();
+            let targetQIds = [];
+
+            if (type === 'recent') {
+                targetQIds = appState.recentWrongQuestions;
+            } else if (type === 'all') {
+                targetQIds = Object.keys(appState.allWrongQuestions);
+            }
+
+            if (!targetQIds || targetQIds.length === 0) {
+                alert("復習対象の問題がありません。まずは通常モードで問題を解いてみましょう！");
+                return;
+            }
+
+            const targetQuestions = allQ.filter(q => targetQIds.includes(q.id));
+            const shuffled = [...targetQuestions].sort(() => Math.random() - 0.5);
+
+            currentQuizSession = {
+                questions: shuffled,
+                currentIndex: 0,
+                sessionWrongs: [],
+                mode: type === 'recent' ? '直前間違い復習' : '累計間違い復習',
+                level: 0
+            };
+
+            showScreen('quiz-screen');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const session = currentQuizSession;
+            const q = session.questions[session.currentIndex];
+
+            // ヘッダー情報
+            document.getElementById('quiz-mode-tag').innerText = session.mode;
+            document.getElementById('quiz-progress-text').innerText = `問題 ${session.currentIndex + 1} / ${session.questions.length}`;
+            document.getElementById('quiz-combo-badge').innerText = `🔥 ${appState.currentCombo} 連続正解`;
+
+            document.getElementById('quiz-target-cat').innerText = `【${q.category}】`;
+            document.getElementById('quiz-question-type').innerText = q.mode === 'case' ? '患者症例判別' : '生薬・原典問';
+            document.getElementById('quiz-question-stem').innerText = q.stem;
+
+            // 解説カードを非表示化
+            document.getElementById('quiz-explanation-card').classList.add('hidden');
+            document.getElementById('quiz-unlock-alert').classList.add('hidden');
+
+            // 選択肢の動的生成
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full btn-press bg-white hover:bg-stone-50 border-2 border-stone-200 text-stone-800 p-3.5 rounded-xl text-left font-semibold text-xs sm:text-sm shadow-sm flex items-center justify-between transition-all";
+                btn.onclick = () => checkAnswer(idx);
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-full bg-stone-100 border border-stone-300 text-stone-600 flex items-center justify-center font-bold text-xs flex-shrink-0">${['A', 'B', 'C', 'D'][idx]}</span>
+                        <span>${optText}</span>
+                    </div>
+                    <span class="option-icon text-base"></span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIndex) {
+            const session = currentQuizSession;
+            const q = session.questions[session.currentIndex];
+            const isCorrect = selectedIndex === q.answerIndex;
+
+            // ボタン無効化と色の割り当て
+            const container = document.getElementById('quiz-options-container');
+            const buttons = container.querySelectorAll('button');
+
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-stone-50', 'border-stone-200');
+
+                if (idx === q.answerIndex) {
+                    btn.classList.add('border-emerald-600', 'bg-emerald-50', 'text-emerald-900', 'font-bold');
+                    btn.querySelector('.option-icon').innerText = '⭕';
+                } else if (idx === selectedIndex && !isCorrect) {
+                    btn.classList.add('border-rose-500', 'bg-rose-50', 'text-rose-900');
+                    btn.querySelector('.option-icon').innerText = '❌';
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            // 成績記録更新
+            appState.answeredCount++;
+
+            if (!appState.formulaStats[q.formulaId]) {
+                appState.formulaStats[q.formulaId] = { correct: 0, wrong: 0 };
+            }
+
+            let newlyUnlocked = false;
+
+            if (isCorrect) {
+                appState.correctCount++;
+                appState.currentCombo++;
+                if (appState.currentCombo > appState.maxCombo) {
+                    appState.maxCombo = appState.currentCombo;
+                }
+                appState.formulaStats[q.formulaId].correct++;
+
+                // 解放判定（初正解時）
+                if (!appState.unlockedFormulas.includes(q.formulaId)) {
+                    appState.unlockedFormulas.push(q.formulaId);
+                    newlyUnlocked = true;
+                }
+            } else {
+                appState.currentCombo = 0;
+                appState.formulaStats[q.formulaId].wrong++;
+
+                // 間違いリストに追加
+                if (!session.sessionWrongs.includes(q.id)) {
+                    session.sessionWrongs.push(q.id);
+                }
+                if (!appState.recentWrongQuestions.includes(q.id)) {
+                    appState.recentWrongQuestions.push(q.id);
+                }
+                appState.allWrongQuestions[q.id] = (appState.allWrongQuestions[q.id] || 0) + 1;
+            }
+
+            saveUserData();
+
+            // 結果カード表示
+            const expCard = document.getElementById('quiz-explanation-card');
+            const resHeader = document.getElementById('quiz-result-header');
+
+            expCard.classList.remove('hidden');
+
+            if (isCorrect) {
+                resHeader.className = "p-3 text-center font-bold text-white text-base bg-emerald-600";
+                resHeader.innerText = "⭕ 正解！";
+            } else {
+                resHeader.className = "p-3 text-center font-bold text-white text-base bg-rose-600";
+                resHeader.innerText = `❌ 不正解... （正解：${['A', 'B', 'C', 'D'][q.answerIndex]} ${q.options[q.answerIndex]}）`;
+            }
+
+            if (newlyUnlocked) {
+                document.getElementById('quiz-unlock-alert').classList.remove('hidden');
+            }
+
+            // 解説文章セット
+            document.getElementById('quiz-exp-reason').innerText = q.explanation.reason;
+            document.getElementById('quiz-exp-diff').innerText = q.explanation.differentials;
+            document.getElementById('quiz-exp-key').innerText = q.explanation.keyPoint;
+
+            // スクロール調整
+            expCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function nextQuestion() {
+            const session = currentQuizSession;
+            session.currentIndex++;
+
+            if (session.currentIndex < session.questions.length) {
+                renderQuestion();
+            } else {
+                // セッション終了処理
+                finishQuizSession();
+            }
+        }
+
+        function finishQuizSession() {
+            const session = currentQuizSession;
+            const wrongCount = session.sessionWrongs.length;
+            const total = session.questions.length;
+            const correctInSession = total - wrongCount;
+
+            alert(`お疲れ様でした！\n今回解答：${total}問\n正解：${correctInSession}問\n今回間違えた問題：${wrongCount}問`);
+
+            if (wrongCount > 0) {
+                if (confirm("今回間違えた問題だけをすぐに復習しますか？")) {
+                    appState.recentWrongQuestions = session.sessionWrongs;
+                    startReviewQuiz('recent');
+                    return;
+                }
+            }
+            showScreen('home-screen');
+        }
+
+        function confirmExitQuiz() {
+            if (confirm("クイズを中断してホームに戻りますか？")) {
+                showScreen('home-screen');
+            }
+        }
+
+        /* ----------------------------------------------------
+           漢方図鑑 表示 & フィルター処理
+        ---------------------------------------------------- */
+        function setEncFilter(cat) {
+            encCurrentFilter = cat;
+            const buttons = document.querySelectorAll('.enc-filter-btn');
+            buttons.forEach(btn => {
+                if (btn.innerText === cat || (cat === 'ALL' && btn.innerText === 'すべて') || (cat === 'UNLOCKED' && btn.innerText === '解放済み')) {
+                    btn.className = "enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-emerald-800 text-white shadow-sm";
+                } else {
+                    btn.className = "enc-filter-btn px-3 py-1.5 rounded-full whitespace-nowrap font-medium bg-stone-200 text-stone-700";
+                }
+            });
+            renderEncyclopedia();
+        }
+
+        function renderEncyclopedia() {
+            const grid = document.getElementById('enc-grid');
+            if (!grid) return;
+
+            const searchVal = (document.getElementById('enc-search-input')?.value || '').toLowerCase();
+
+            grid.innerHTML = '';
+
+            formulaData.forEach(item => {
+                const isUnlocked = appState.unlockedFormulas.includes(item.id);
+
+                // フィルター判定
+                if (encCurrentFilter === 'UNLOCKED' && !isUnlocked) return;
+                if (encCurrentFilter !== 'ALL' && encCurrentFilter !== 'UNLOCKED' && item.category !== encCurrentFilter) return;
+
+                // 検索判定
+                if (searchVal) {
+                    const matchName = item.name.toLowerCase().includes(searchVal);
+                    const matchCat = item.category.toLowerCase().includes(searchVal);
+                    const matchHerbs = item.crudeDrugs.some(hd => hd.toLowerCase().includes(searchVal));
+                    const matchIndications = item.indications.some(ind => ind.toLowerCase().includes(searchVal));
+                    if (!matchName && !matchCat && !matchHerbs && !matchIndications) return;
+                }
+
+                const card = document.createElement('div');
+                card.onclick = () => openEncModal(item.id);
+
+                if (isUnlocked) {
+                    card.className = "btn-press bg-white border-2 border-emerald-600 p-3 rounded-2xl shadow-sm text-left flex flex-col justify-between cursor-pointer relative overflow-hidden";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">${item.category}</span>
+                                <span class="text-[10px] text-emerald-700 font-bold flex items-center gap-0.5">🔓 解放済</span>
+                            </div>
+                            <h4 class="font-bold text-stone-800 text-base mt-0.5">${item.name}</h4>
+                            <p class="text-[11px] text-stone-500 line-clamp-1 mt-1">${item.indications.join('・')}</p>
+                        </div>
+                        <div class="mt-2 text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2 py-1 rounded-lg text-center">
+                            詳細を閲覧する →
+                        </div>
+                    `;
+                } else {
+                    card.className = "btn-press bg-stone-100 border border-stone-300 p-3 rounded-2xl shadow-none text-left flex flex-col justify-between opacity-80 cursor-pointer";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[10px] bg-stone-200 text-stone-600 font-semibold px-2 py-0.5 rounded-full">${item.category}</span>
+                                <span class="text-[10px] text-stone-400 font-bold">🔒 未解放</span>
+                            </div>
+                            <h4 class="font-bold text-stone-700 text-base mt-0.5">${item.name}</h4>
+                            <p class="text-[11px] text-stone-400 mt-1 italic">正解して図鑑を解放</p>
+                        </div>
+                        <div class="mt-2 text-[10px] text-stone-500 font-medium bg-stone-200 px-2 py-1 rounded-lg text-center">
+                            問題を解いて解放
+                        </div>
+                    `;
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        function openEncModal(formulaId) {
+            const item = formulaData.find(f => f.id === formulaId);
+            if (!item) return;
+
+            const isUnlocked = appState.unlockedFormulas.includes(formulaId);
+
+            document.getElementById('modal-category').innerText = item.category;
+            document.getElementById('modal-title').innerText = item.name + (isUnlocked ? '' : ' (未解放)');
+
+            const modalBody = document.getElementById('modal-body');
+
+            if (!isUnlocked) {
+                modalBody.innerHTML = `
+                    <div class="text-center py-8 space-y-3">
+                        <div class="text-4xl">🔒</div>
+                        <h4 class="font-bold text-stone-800 text-base">この処方はまだ未解放です</h4>
+                        <p class="text-xs text-stone-500 max-w-xs mx-auto">
+                            クイズ（患者症例・生薬・原典）で「${item.name}」に関する問題に1回正解すると、生薬構成や原典、臨床鑑別ポイントなどの詳細情報が解放されます！
+                        </p>
+                        <button onclick="closeEncModal()" class="bg-stone-800 text-white text-xs font-bold px-4 py-2 rounded-xl mt-2">
+                            閉じる
+                        </button>
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🌿 生薬構成</span>
+                            <div class="flex flex-wrap gap-1 mt-1.5">
+                                ${item.crudeDrugs.map(d => `<span class="bg-stone-100 text-stone-800 text-[11px] px-2 py-0.5 rounded-md font-medium border border-stone-200">${d}</span>`).join('')}
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">✨ 効能・主治</span>
+                            <p class="mt-1 text-stone-700">${item.effects.join('・')}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🎯 主な適応</span>
+                            <p class="mt-1 text-stone-700">${item.indications.join('・')}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">🩺 代表的症候・体質</span>
+                            <p class="mt-1 text-stone-700 leading-normal">${item.symptoms}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">📜 原典</span>
+                            <p class="mt-1 text-stone-700 font-semibold">${item.originalText}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">💡 処方選択の重要ポイント</span>
+                            <p class="mt-1 text-stone-700 leading-normal">${item.keyPoints}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">⚖️ 類似処方との鑑別</span>
+                            <p class="mt-1 text-stone-700 leading-normal whitespace-pre-line">${item.relatedFormulas}</p>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">🧠 覚えるためのポイント</span>
+                            <p class="mt-1 text-stone-700 leading-normal font-medium">${item.memoryTips}</p>
+                        </div>
+
+                        <div class="p-2.5 bg-stone-100 rounded-xl text-[10px] text-stone-500 leading-normal border border-stone-200">
+                            ※ ${item.note}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('enc-modal').classList.remove('hidden');
+        }
+
+        function closeEncModal() {
+            document.getElementById('enc-modal').classList.add('hidden');
+        }
+
+        /* ----------------------------------------------------
+           学習記録・統計描画
+        ---------------------------------------------------- */
+        function renderStatsScreen() {
+            document.getElementById('stats-total-answered').innerText = appState.answeredCount;
+            
+            const accuracy = appState.answeredCount > 0 ? Math.round((appState.correctCount / appState.answeredCount) * 100) : 0;
+            document.getElementById('stats-accuracy').innerText = `${accuracy}%`;
+
+            document.getElementById('stats-unlocked-count').innerText = `${appState.unlockedFormulas.length} / 64`;
+            document.getElementById('stats-max-combo').innerText = `${appState.maxCombo} 回`;
+
+            // 苦手ランキングの算出
+            const weakListEl = document.getElementById('stats-weak-list');
+            weakListEl.innerHTML = '';
+
+            const arr = Object.keys(appState.formulaStats).map(fId => {
+                const stat = appState.formulaStats[fId];
+                const formula = formulaData.find(f => f.id === fId);
+                return {
+                    id: fId,
+                    name: formula ? formula.name : fId,
+                    wrong: stat.wrong,
+                    correct: stat.correct
+                };
+            }).filter(item => item.wrong > 0).sort((a, b) => b.wrong - a.wrong);
+
+            if (arr.length === 0) {
+                weakListEl.innerHTML = '<p class="text-stone-400 italic text-center py-2">間違いデータはありません。全問正解中です！</p>';
+            } else {
+                arr.slice(0, 5).forEach((item, index) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between bg-stone-50 p-2 rounded-xl border border-stone-200";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold flex items-center justify-center">${index + 1}</span>
+                            <span class="font-bold text-stone-800">${item.name}</span>
+                        </div>
+                        <div class="text-xs text-stone-500">
+                            間違い <span class="font-bold text-rose-600">${item.wrong}</span> 回
+                        </div>
+                    `;
+                    weakListEl.appendChild(row);
+                });
+            }
+        }
+
+        /* ----------------------------------------------------
+           共有機能 (Web Share API & URL Copy)
+        ---------------------------------------------------- */
+        function shareApp() {
+            const shareData = {
+                title: '漢方重要処方 学習ゲーム',
+                text: '薬学生必見！国試・CBT頻出の漢方64処方をゲーム感覚で完全マスターできるWebアプリ',
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(err => console.log('Share canceled', err));
+            } else {
+                copyUrlToClipboard();
+            }
+        }
+
+        function copyUrlToClipboard() {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = window.location.href;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            alert("アプリのURLをクリップボードにコピーしました！SNSや友達に共有できます。");
+        }
+    </script>
+</body>
+</html>
