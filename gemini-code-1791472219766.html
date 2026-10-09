@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>漢方・生薬学習シミュレーションゲーム 完全版</title>
+  <style>
+    /* ==========================================
+       1. 基本スタイル & CSS変数 (スマホ最適化)
+       ========================================== */
+    :root {
+      --bg-color: #f4f8f5;
+      --card-bg: #ffffff;
+      --primary: #2e7d32;
+      --primary-light: #81c784;
+      --primary-dark: #1b5e20;
+      --accent: #d32f2f;
+      --accent-gold: #fbc02d;
+      --text-main: #212121;
+      --text-sub: #616161;
+      --border-color: #e0e0e0;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
+      --glow-green: 0 0 12px rgba(46, 125, 50, 0.6);
+      --glow-gold: 0 0 15px rgba(255, 215, 0, 0.8);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      overflow-x: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* アプリ用スマホシェル構造 */
+    #app-container {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      max-height: 920px;
+      background-color: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    /* ヘッダー固定構造 */
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title {
+      font-size: 1.05rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.95);
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* ネオン収集率メーター */
+    .progress-bar-container {
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      height: 18px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00e676, #76ff03, #ffea00);
+      width: 0%;
+      transition: width 0.5s ease-out;
+      box-shadow: 0 0 10px #00e676;
+    }
+
+    .progress-bar-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* メインコンテンツエリア */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .view-section {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .view-section.active {
+      display: flex;
+    }
+
+    /* ==========================================
+       2. ホーム画面（ノーフリック・1画面収容）
+       ========================================== */
+    #view-home {
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .pickup-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .pickup-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      border-left: 4px solid var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-size: 0.75rem;
+    }
+
+    .pickup-tag {
+      font-size: 0.65rem;
+      background: #e8f5e9;
+      color: var(--primary-dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .pickup-title {
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: var(--primary-dark);
+    }
+
+    .pickup-yomi {
+      font-size: 0.65rem;
+      color: var(--text-sub);
+    }
+
+    .pickup-desc {
+      font-size: 0.7rem;
+      color: #424242;
+      margin-top: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 目立つ特大問題挑戦ボタン */
+    .hero-training-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hero-btn {
+      background: linear-gradient(135deg, #2e7d32, #4caf50);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-md), var(--glow-green);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      animation: pulse 2.5s infinite;
+    }
+
+    .hero-btn.shoyaku-btn {
+      background: linear-gradient(135deg, #1565c0, #42a5f5);
+      box-shadow: var(--shadow-md), 0 0 12px rgba(21, 101, 192, 0.5);
+    }
+
+    .hero-btn:active {
+      transform: scale(0.98);
+    }
+
+    .hero-btn-title {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .hero-btn-sub {
+      font-size: 0.75rem;
+      font-weight: normal;
+      opacity: 0.9;
+    }
+
+    /* アイコンナビゲーション（グリッド） */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .app-icon-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-sm);
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .app-icon-card:active {
+      background: #e8f5e9;
+      transform: scale(0.95);
+    }
+
+    .app-icon-svg {
+      font-size: 1.4rem;
+    }
+
+    .app-icon-label {
+      font-size: 0.7rem;
+      font-weight: bold;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    /* 免責事項 */
+    .disclaimer-text {
+      font-size: 0.6rem;
+      color: var(--text-sub);
+      text-align: center;
+      padding: 4px;
+      background: #eeeeee;
+      border-radius: 4px;
+    }
+
+    /* ==========================================
+       3. モード・難易度選択画面
+       ========================================== */
+    .card-box {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .select-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .select-item {
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .select-item.selected {
+      border-color: var(--primary);
+      background-color: #e8f5e9;
+    }
+
+    .select-item-title {
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .select-item-desc {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+    }
+
+    .level-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .level-card {
+      padding: 10px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .level-card.selected {
+      border-color: var(--accent-gold);
+      background: #fffde7;
+      box-shadow: var(--glow-gold);
+    }
+
+    .level-card.level-2-active {
+      animation: sparkle 1.5s infinite alternate;
+    }
+
+    .start-action-btn {
+      background: linear-gradient(135deg, #d32f2f, #f57c00);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+      margin-top: auto;
+    }
+
+    /* ==========================================
+       4. クイズプレイ画面
+       ========================================== */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .level-badge {
+      background: var(--primary-dark);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+    }
+
+    .level-badge.level-2 {
+      background: linear-gradient(135deg, #b71c1c, #f57c00);
+      box-shadow: var(--glow-gold);
+    }
+
+    .question-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      border-top: 4px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .question-tag {
+      font-size: 0.7rem;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .question-text {
+      font-size: 0.95rem;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .option-btn {
+      background: var(--card-bg);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .option-btn:active {
+      transform: scale(0.98);
+      background-color: #f1f8e9;
+    }
+
+    .option-btn .yomi-sub {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      font-weight: normal;
+      display: block;
+    }
+
+    /* ==========================================
+       5. 結果 & 解答解説モーダル
+       ========================================== */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 200;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      width: 100%;
+      max-height: 85%;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .explain-section {
+      background: #f9f9f9;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      line-height: 1.4;
+      border-left: 3px solid var(--primary);
+    }
+
+    .explain-label {
+      font-weight: bold;
+      color: var(--primary-dark);
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .result-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.8rem;
+    }
+
+    .result-item.correct {
+      border-left: 4px solid #4caf50;
+    }
+
+    .result-item.wrong {
+      border-left: 4px solid #f44336;
+    }
+
+    .retry-single-btn {
+      background: #e53935;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    /* ==========================================
+       6. 漢方＆生薬図鑑・詳細モーダル
+       ========================================== */
+    .search-filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .search-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      width: 100%;
+    }
+
+    .filter-tags {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .tag-btn {
+      padding: 4px 8px;
+      background: #e0e0e0;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      border: none;
+    }
+
+    .tag-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .zukan-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      overflow-y: auto;
+      padding-bottom: 20px;
+    }
+
+    .zukan-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .zukan-card.locked {
+      background: #eceff1;
+      opacity: 0.7;
+    }
+
+    .zukan-status-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 8px;
+    }
+
+    .zukan-status-badge.unlocked {
+      background: #e8f5e9;
+      color: var(--primary-dark);
+      font-weight: bold;
+    }
+
+    .zukan-status-badge.locked-text {
+      background: #cfd8dc;
+      color: #37474f;
+    }
+
+    /* ==========================================
+       7. アニメーション & 特殊効果
+       ========================================== */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes sparkle {
+      0% { box-shadow: 0 0 5px #ffd700; border-color: #ffd700; }
+      100% { box-shadow: 0 0 20px #ff3d00, 0 0 10px #ffd700; border-color: #ff3d00; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* グラフCanvas */
+    #stats-canvas {
+      width: 100%;
+      height: 140px;
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- 固定ヘッダー -->
+    <header>
+      <div class="header-top">
+        <div class="header-title">
+          <span>🌿 漢方マスター</span>
+        </div>
+        <div class="header-actions">
+          <button id="btn-back" class="icon-btn" onclick="app.goHome()">🏠 ホーム</button>
+          <button id="btn-audio" class="icon-btn" onclick="app.toggleAudio()">🔊 ON</button>
+        </div>
+      </div>
+      <!-- 光る収集率メーター -->
+      <div class="progress-bar-container">
+        <div id="zukan-progress-fill" class="progress-bar-fill"></div>
+        <div id="zukan-progress-text" class="progress-bar-text">漢方図鑑収集率: 0% (あと 64 処方!)</div>
+      </div>
+    </header>
+
+    <!-- メインビュー切り替えエリア -->
+    <main>
+
+      <!-- 1. ホーム画面 (ノーフリック・1画面収容構造) -->
+      <section id="view-home" class="view-section active">
+        <!-- 今日のピックアップ -->
+        <div class="pickup-container">
+          <div class="pickup-card" onclick="app.showTodayKampoDetail()">
+            <span class="pickup-tag">本日の漢方薬</span>
+            <div id="today-kampo-name" class="pickup-title">葛根湯</div>
+            <div id="today-kampo-yomi" class="pickup-yomi">かっこんとう</div>
+            <div id="today-kampo-desc" class="pickup-desc">風邪の初期、肩こり、頭痛に。</div>
+          </div>
+          <div class="pickup-card" onclick="app.showTodayShoyakuDetail()">
+            <span class="pickup-tag">本日の生薬</span>
+            <div id="today-shoyaku-name" class="pickup-title">甘草</div>
+            <div id="today-shoyaku-yomi" class="pickup-yomi">かんぞう</div>
+            <div id="today-shoyaku-desc" class="pickup-desc">諸薬を調和し急迫を緩める。</div>
+          </div>
+        </div>
+
+        <!-- 一番目立つトレーニング開始ボタン -->
+        <div class="hero-training-buttons">
+          <button class="hero-btn" onclick="app.openModeSelect('case')">
+            <div class="hero-btn-title">
+              <span>🥋 症例トレーニング</span>
+              <span class="hero-btn-sub">弁証論治・方証相対・現代病名</span>
+            </div>
+            <span>▶</span>
+          </button>
+          <button class="hero-btn shoyaku-btn" onclick="app.openModeSelect('shoyaku')">
+            <div class="hero-btn-title">
+              <span>🌱 生薬・処方トレーニング</span>
+              <span class="hero-btn-sub">構成生薬・薬能成分・副作用</span>
+            </div>
+            <span>▶</span>
+          </button>
+        </div>
+
+        <!-- アプリアイコン・ナビゲーション -->
+        <div class="app-grid">
+          <div class="app-icon-card" onclick="app.openReviewView()">
+            <span class="app-icon-svg">🔄</span>
+            <span class="app-icon-label">復習・集中</span>
+          </div>
+          <div class="app-icon-card" onclick="app.openKampoZukan()">
+            <span class="app-icon-svg">📖</span>
+            <span class="app-icon-label">漢方図鑑</span>
+          </div>
+          <div class="app-icon-card" onclick="app.openShoyakuZukan()">
+            <span class="app-icon-svg">🍃</span>
+            <span class="app-icon-label">生薬図鑑</span>
+          </div>
+          <div class="app-icon-card" onclick="app.openShoSimulator()">
+            <span class="app-icon-svg">🔮</span>
+            <span class="app-icon-label">証判定</span>
+          </div>
+          <div class="app-icon-card" onclick="app.openStatsView()">
+            <span class="app-icon-svg">📊</span>
+            <span class="app-icon-label">学習記録</span>
+          </div>
+          <div class="app-icon-card" onclick="app.resetDataConfirm()">
+            <span class="app-icon-svg">⚙️</span>
+            <span class="app-icon-label">設定・リセット</span>
+          </div>
+        </div>
+
+        <!-- 免責事項 -->
+        <div class="disclaimer-text">
+          ※本アプリは学習・体験用であり、実際の医療診断・治療を行うものではありません。
+        </div>
+      </section>
+
+      <!-- 2. 出題モード＆難易度選択画面 -->
+      <section id="view-select" class="view-section">
+        <div class="card-box">
+          <div class="section-title">🎯 出題モード選択</div>
+          <div id="mode-select-list" class="select-list">
+            <!-- 動的挿入 -->
+          </div>
+        </div>
+
+        <div class="card-box">
+          <div class="section-title">🔥 難易度レベル選択</div>
+          <div class="level-container">
+            <div id="level-1-card" class="level-card selected" onclick="app.selectLevel(1)">
+              <div style="font-weight:bold; font-size:0.9rem;">レベル 1</div>
+              <div style="font-size:0.7rem; color:var(--text-sub);">基本・典型症例・主要生薬</div>
+            </div>
+            <div id="level-2-card" class="level-card" onclick="app.selectLevel(2)">
+              <div style="font-weight:bold; font-size:0.9rem; color:#d32f2f;">レベル 2 ⚡</div>
+              <div style="font-size:0.7rem; color:var(--text-sub);">応用・鑑別・マイナー成分</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="start-action-btn" onclick="app.startQuizSession()">クイズスタート (5問) ▶</button>
+      </section>
+
+      <!-- 3. クイズプレイ画面 -->
+      <section id="view-quiz" class="view-section">
+        <div class="quiz-header">
+          <span id="quiz-progress-text">第 1 / 5 問</span>
+          <span id="quiz-level-badge" class="level-badge">レベル1</span>
+        </div>
+
+        <div class="question-card">
+          <div id="quiz-question-tag" class="question-tag">【弁証論治モード】</div>
+          <div id="quiz-question-text" class="question-text">問題文がここに入ります。</div>
+        </div>
+
+        <div id="quiz-options-container" class="quiz-options">
+          <!-- 選択肢ボタン動的生成 -->
+        </div>
+      </section>
+
+      <!-- 4. 復習＆苦手分析画面 -->
+      <section id="view-review" class="view-section">
+        <div class="card-box">
+          <div class="section-title">🎯 よく間違える処方 ワースト5</div>
+          <div id="worst-kampos-list" class="select-list">
+            <!-- 動的生成 -->
+          </div>
+        </div>
+
+        <div class="card-box">
+          <div class="section-title">📂 苦手カテゴリー練習</div>
+          <div id="review-category-list" class="select-list">
+            <!-- 動的生成 -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 漢方図鑑画面 -->
+      <section id="view-zukan-kampo" class="view-section">
+        <div class="search-filter-bar">
+          <input type="text" id="search-kampo" class="search-input" placeholder="処方名・ふりがな・症状で検索..." oninput="app.renderKampoZukan()">
+          <div id="filter-kampo-tags" class="filter-tags">
+            <!-- 動的カテゴリタグ -->
+          </div>
+        </div>
+        <div id="zukan-kampo-grid" class="zukan-grid">
+          <!-- 64処方カード生成 -->
+        </div>
+      </section>
+
+      <!-- 6. 生薬図鑑画面 -->
+      <section id="view-zukan-shoyaku" class="view-section">
+        <div class="search-filter-bar">
+          <input type="text" id="search-shoyaku" class="search-input" placeholder="生薬名・読み・成分で検索..." oninput="app.renderShoyakuZukan()">
+        </div>
+        <div id="zukan-shoyaku-grid" class="zukan-grid">
+          <!-- 生薬カード生成 -->
+        </div>
+      </section>
+
+      <!-- 7. 証シミュレーター -->
+      <section id="view-simulator" class="view-section">
+        <div class="card-box">
+          <div class="section-title">🔮 漢方 証判定シミュレーター</div>
+          <p style="font-size:0.75rem; color:var(--text-sub); margin-bottom:8px;">
+            現在の体質や気になる自覚症状に当てはまるものを選択してください。
+          </p>
+
+          <div id="simulator-questions" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- 質問フォーム動的生成 -->
+          </div>
+
+          <button class="start-action-btn" style="margin-top:12px;" onclick="app.runShoSimulation()">証を判定し処方を提案する</button>
+        </div>
+
+        <div id="simulator-result" class="card-box" style="display:none;">
+          <div class="section-title">📋 判定結果・おすすめ処方</div>
+          <div id="simulator-result-body" style="font-size:0.8rem; line-height:1.5;"></div>
+        </div>
+
+        <div class="disclaimer-text">
+          ※本機能は学習・体験用であり、医療診断・治療を行うものではありません。
+        </div>
+      </section>
+
+      <!-- 8. 学習記録画面 -->
+      <section id="view-stats" class="view-section">
+        <div class="card-box">
+          <div class="section-title">📈 解答数・正答率の推移</div>
+          <canvas id="stats-canvas"></canvas>
+        </div>
+
+        <div class="card-box">
+          <div class="section-title">🏆 学習実績データ</div>
+          <div id="stats-summary" style="font-size:0.8rem; display:flex; flex-direction:column; gap:4px;">
+            <!-- 動的記述 -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 汎用モーダルポップアップ (解説 / 図鑑詳細 / 結果) -->
+  <div id="modal-overlay" class="modal-overlay">
+    <div id="modal-content" class="modal-content">
+      <!-- 動的挿入 -->
+    </div>
+  </div>
+
+  <!-- JavaScript ロジック & データベース構築 -->
+  <script>
+  /* ==========================================
+     データベース: 64処方完全定義 (読み・ふりがな完全準拠)
+     ========================================== */
+  const KAMPO_DATABASE = [
+    // --- 発表剤 (9) ---
+    {
+      id: "k1", name: "桂枝湯", yomi: "けいしとう", category: "発表剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・寒・虚", kiketsu: "気虚・風寒表虚症", zofu: "脾胃・衛気", chihou: "解肌発表・調和営衛" },
+      hoshosotai: { ho: "桂枝湯", sho: "体力虚弱で頭痛、発熱、汗が出るものの風邪初期" },
+      standard_disease: "風邪の初期、神経痛",
+      origin: "傷寒論",
+      features: "自然発汗があり体力が低下している表虚証に対する基本処方。",
+      caution: "甘草含有。実証の熱感著しい者には不適。",
+      memory_point: "解肌発表の代表。桂皮・芍薬・生姜・大棗・甘草の5生薬。"
+    },
+    {
+      id: "k2", name: "葛根湯", yomi: "かっこんとう", category: "発表剤",
+      ingredients: [{name:"葛根",yomi:"かっこん"}, {name:"麻黄",yomi:"まおう"}, {name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・寒・実", kiketsu: "風寒表実症", zofu: "太陽病・膀胱経", chihou: "発汗解表・昇津舒筋" },
+      hoshosotai: { ho: "葛根湯", sho: "体力が充実し、かぜの初期で首筋や肩がこるもの" },
+      standard_disease: "感冒初期、鼻風邪、肩こり、上半身の筋肉痛",
+      origin: "傷寒論",
+      features: "無汗で項背部（首・肩）のこり・強張りがある風邪初期の実証。葛根・麻黄を含む。",
+      caution: "エフェドリン・グリチルリチン含有。胃腸虚弱・高血圧注意。",
+      memory_point: "桂枝湯＋葛根・麻黄。首肩のこりと無汗がキーワード。"
+    },
+    {
+      id: "k3", name: "小青竜湯", yomi: "しょうせいりゅうとう", category: "発表剤",
+      ingredients: [{name:"麻黄",yomi:"まおう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"乾姜",yomi:"かんきょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"細辛",yomi:"さいしん"}, {name:"桂皮",yomi:"けいひ"}, {name:"五味子",yomi:"ごみし"}, {name:"半夏",yomi:"はんげ"}],
+      tcm: { hachiko: "表・寒・実（水滞）", kiketsu: "外寒内飲症（水飲）", zofu: "肺・脾", chihou: "解表散寒・温肺化飲" },
+      hoshosotai: { ho: "小青竜湯", sho: "水様の鼻水、薄い痰、くしゃみ、気管支炎" },
+      standard_disease: "アレルギー性鼻炎、花粉症、気管支喘息",
+      origin: "傷寒論",
+      features: "「透明でサラサラした水様鼻水・水様痰」に特効。温肺化飲の代表。",
+      caution: "麻黄・細辛（アコニチン系注意）・甘草含む。",
+      memory_point: "サラサラ水鼻水＝小青竜湯。細辛・五味子・乾姜の組み合わせ。"
+    },
+    {
+      id: "k4", name: "麻黄湯", yomi: "まおうとう", category: "発表剤",
+      ingredients: [{name:"麻黄",yomi:"まおう"}, {name:"桂皮",yomi:"けいひ"}, {name:"杏仁",yomi:"きょうにん"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・寒・実", kiketsu: "風寒表実重症", zofu: "太陽病", chihou: "発汗解表・宣肺平喘" },
+      hoshosotai: { ho: "麻黄湯", sho: "体力が充実し、高熱、悪寒、関節痛があり無汗のもの" },
+      standard_disease: "インフルエンザ初期、急性感冒、関節痛",
+      origin: "傷寒論",
+      features: "強烈な発汗作用。実証で悪寒・高熱・節々の強い痛みがあり汗が出ない場合。",
+      caution: "強発汗剤。胃腸虚弱・高齢者・汗が出ている者には禁忌。",
+      memory_point: "麻黄・桂皮・杏仁・甘草の4味。強い発汗・インフル初期。"
+    },
+    {
+      id: "k5", name: "麻黄附子細辛湯", yomi: "まおうぶしさいしんとう", category: "発表剤",
+      ingredients: [{name:"麻黄",yomi:"まおう"}, {name:"附子",yomi:"ぶし"}, {name:"細辛",yomi:"さいしん"}],
+      tcm: { hachiko: "表寒・裏寒・虚", kiketsu: "太陰病・少陰病（陽虚外感）", zofu: "心・腎", chihou: "助陽解表" },
+      hoshosotai: { ho: "麻黄附子細辛湯", sho: "高齢者や体力の衰えた人の風邪でゾクゾクする寒気" },
+      standard_disease: "高齢者の風邪、アレルギー性鼻炎、悪寒",
+      origin: "傷寒論",
+      features: "少陰病初期。強い冷え（陽虚）を持つ虚弱者の風邪に麻黄と附子で対応。",
+      caution: "附子（毒性生薬）・麻黄含む。血圧変化に留意。",
+      memory_point: "麻黄＋附子＋細辛の3味のみ。高齢者のゾクゾク冷える風邪。"
+    },
+    {
+      id: "k6", name: "十味敗毒湯", yomi: "じゅうみはいどくとう", category: "発表剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"桔梗",yomi:"ききょう"}, {name:"川芎",yomi:"せんきゅう"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"防風",yomi:"ぼうふう"}, {name:"独活",yomi:"どにかつ"}, {name:"荊芥",yomi:"けいがい"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大黄",yomi:"だいおう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・熱・中間症", kiketsu: "風湿熱毒", zofu: "皮膚", chihou: "疎風解表・清熱化湿" },
+      hoshosotai: { ho: "十味敗毒湯", sho: "化膿性皮膚疾患、湿疹、蕁麻疹" },
+      standard_disease: "急性皮膚疾患の初期、ニキビ、蕁麻疹",
+      origin: "華佗華岡青洲創方",
+      features: "江戸時代の華岡青洲開発。化膿傾向のある皮膚症状初期に解毒散熱。",
+      caution: "体質に合わせた生薬構成（桜皮含有品もあり）。",
+      memory_point: "日本創方。皮膚の化膿・湿疹・蕁麻疹の初期。"
+    },
+    {
+      id: "k7", name: "駆風解毒湯", yomi: "くふうげどくとう", category: "発表剤",
+      ingredients: [{name:"防風",yomi:"ぼうふう"}, {name:"荊芥",yomi:"けいがい"}, {name:"牛蒡子",yomi:"ごぼうし"}, {name:"羌活",yomi:"きょうかつ"}, {name:"桔梗",yomi:"ききょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"石膏",yomi:"せっこう"}],
+      tcm: { hachiko: "表・熱・実", kiketsu: "風熱表証", zofu: "咽喉・肺", chihou: "疎風清熱・利咽解毒" },
+      hoshosotai: { ho: "駆風解毒湯", sho: "咽喉が腫れて痛むものの風邪・扁桃炎" },
+      standard_disease: "扁桃炎、咽頭炎、喉の腫れ痛み",
+      origin: "万病回春",
+      features: "喉うがいをしながらゆっくり飲むと効果的（利咽作用）。",
+      caution: "冷やして含み飲み推奨。",
+      memory_point: "牛蒡子・桔梗・石膏で喉の猛烈な腫れと痛みを清熱。"
+    },
+    {
+      id: "k8", name: "辛夷清肺湯", yomi: "しんいせいはいとう", category: "発表剤",
+      ingredients: [{name:"辛夷",yomi:"しんい"}, {name:"石膏",yomi:"せっこう"}, {name:"知母",yomi:"ちも"}, {name:"黄芩",yomi:"おうごん"}, {name:"山梔子",yomi:"さんしし"}, {name:"麦門冬",yomi:"ばくもんどう"}, {name:"百合",yomi:"びゃくごう"}, {name:"枇杷葉",yomi:"びわよう"}, {name:"升麻",yomi:"しょうま"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "肺熱鼻鼽", zofu: "肺・鼻", chihou: "清肺開竅・滋陰清熱" },
+      hoshosotai: { ho: "辛夷清肺湯", sho: "鼻づまり、慢性鼻炎、蓄膿症で濃い鼻汁" },
+      standard_disease: "副鼻腔炎（蓄膿症）、慢性鼻炎",
+      origin: "外科正宗",
+      features: "ドロッとした黄緑色の熱を帯びた鼻汁・鼻づまり・慢性副鼻腔炎に。",
+      caution: "胃腸障害注意（石膏・知母）。",
+      memory_point: "通鼻の辛夷＋清肺熱の石膏・黄芩。ドロッと黄鼻汁。"
+    },
+    {
+      id: "k9", name: "消風散", yomi: "しょうふうさん", category: "発表剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"地黄",yomi:"じおう"}, {name:"防風",yomi:"ぼうふう"}, {name:"蝉退",yomi:"せんたい"}, {name:"知母",yomi:"ちも"}, {name:"苦参",yomi:"くじん"}, {name:"胡麻",yomi:"ごま"}, {name:"荊芥",yomi:"けいがい"}, {name:"蒼朮",yomi:"そうじゅつ"}, {name:"牛蒡子",yomi:"ごぼうし"}, {name:"石膏",yomi:"せっこう"}, {name:"甘草",yomi:"かんぞう"}, {name:"木通",yomi:"もくつう"}],
+      tcm: { hachiko: "表裏・湿熱・実", kiketsu: "風湿熱毒侵淫", zofu: "皮膚・血分", chihou: "疎風養血・清熱化湿" },
+      hoshosotai: { ho: "消風散", sho: "かゆみが強く、分泌物が多くて熱感のある湿疹" },
+      standard_disease: "アトピー性皮膚炎、湿疹、水虫",
+      origin: "外科正宗",
+      features: "浸出液（じくじく）が多く、分泌物・強い痒みと赤みがある湿疹に。",
+      caution: "妊婦注意。苦参・石膏で冷やす作用強。",
+      memory_point: "蝉退（セミのぬけがら）配合。かゆみ・じくじく湿疹。"
+    },
+
+    // --- 清熱剤 (5) ---
+    {
+      id: "k10", name: "白虎加人参湯", yomi: "びゃっこかにんじんとう", category: "清熱剤",
+      ingredients: [{name:"知母",yomi:"ちも"}, {name:"石膏",yomi:"せっこう"}, {name:"甘草",yomi:"かんぞう"}, {name:"粳米",yomi:"こうべい"}, {name:"人参",yomi:"にんじん"}],
+      tcm: { hachiko: "裏・熱・虚実夾雑", kiketsu: "陽明気分熱盛・気津両傷", zofu: "胃・肺", chihou: "清熱瀉火・生津潤燥" },
+      hoshosotai: { ho: "白虎加人参湯", sho: "喉が非常に乾き、激しい喉の渇き、汗が多く熱感のあるもの" },
+      standard_disease: "熱中症、糖尿病の口渇、アトピーの熱感",
+      origin: "傷寒論",
+      features: "「大熱・大渇・大汗・脈大」の四熱に。激しい喉の渇きと熱に石膏が効く。",
+      caution: "胃腸が冷えやすい人には慎重投与。",
+      memory_point: "石膏で大熱を冷まし人参で津液を生み出す。酷い口渇。"
+    },
+    {
+      id: "k11", name: "黄連解毒湯", yomi: "おうれんげどくとう", category: "清熱剤",
+      ingredients: [{name:"黄連",yomi:"おうれん"}, {name:"黄芩",yomi:"おうごん"}, {name:"黄柏",yomi:"おうばく"}, {name:"山梔子",yomi:"さんしし"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "三焦熱盛・熱毒", zofu: "心・肝・胃", chihou: "瀉火解毒" },
+      hoshosotai: { ho: "黄連解毒湯", sho: "体力が充実し、のぼせ気味で顔面紅潮、イライラ、鼻血" },
+      standard_disease: "高血圧に伴うイライラ、不眠、皮膚炎、出血",
+      origin: "外台秘要",
+      features: "苦寒の4生薬（三焦の熱を冷ます）。顔が赤くイライラ、赤みのある炎症に。",
+      caution: "長期服用で腸管間質性静脈硬化症に注意（山梔子）。",
+      memory_point: "黄連・黄芩・黄柏・山梔子。苦い！炎症とイライラを強力鎮火。"
+    },
+    {
+      id: "k12", name: "小柴胡湯", yomi: "しょうさいことう", category: "清熱剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"人参",yomi:"にんじん"}, {name:"半夏",yomi:"はんげ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "半表半裏・熱・虚実夾雑", kiketsu: "少陽病・肝胆気郁", zofu: "肝・胆・脾", chihou: "和解少陽" },
+      hoshosotai: { ho: "小柴胡湯", sho: "吐き気、食欲不振、胸脇苦満、舌苔が白く吐き気のある風邪後期" },
+      standard_disease: "感冒後期、慢性肝炎、胃腸障害",
+      origin: "傷寒論",
+      features: "少陽病の代表（往来寒熱、胸脇苦満、口苦、目眩）。和解剤の基本。",
+      caution: "間質性肺炎の報告あり。インターフェロン併用禁忌。",
+      memory_point: "柴胡・黄芩のペア。胸脇苦満（肋骨下の苦しさ）。"
+    },
+    {
+      id: "k13", name: "大柴胡湯", yomi: "だいさいことう", category: "清熱剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"半夏",yomi:"はんげ"}, {name:"枳実",yomi:"きじつ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"大黄",yomi:"だいおう"}],
+      tcm: { hachiko: "少陽陽明合病・裏・実", kiketsu: "少陽熱盛・陽明実熱", zofu: "肝・胆・胃", chihou: "和解少陽・瀉下通便" },
+      hoshosotai: { ho: "大柴胡湯", sho: "体力が充実し、脇腹からみぞおちが張り便秘がちなもの" },
+      standard_disease: "胆嚢炎、高血圧に伴う肩こり・便秘、肥満症",
+      origin: "傷寒論",
+      features: "ガッチリした実証体質。強烈な胸脇苦満、みぞおちの硬い張り、便秘。",
+      caution: "大黄・枳実を含むため軟便・下痢・妊婦注意。",
+      memory_point: "小柴胡湯から人参・甘草を除き大黄・枳実・芍薬を加えたガチ実証処方。"
+    },
+    {
+      id: "k14", name: "柴胡桂枝湯", yomi: "さいこけいしとう", category: "清熱剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"人参",yomi:"にんじん"}, {name:"半夏",yomi:"はんげ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}],
+      tcm: { hachiko: "表裏合病・虚実中間", kiketsu: "太陽少陽合病", zofu: "表・肝胆", chihou: "和解少陽・調和解肌" },
+      hoshosotai: { ho: "柴胡桂枝湯", sho: "発熱・悪寒があり、腹痛や心下部の支えを伴う風邪の中期〜後期" },
+      standard_disease: "風邪の中期、胃潰瘍、神経症",
+      origin: "傷寒論",
+      features: "小柴胡湯＋桂枝湯の合方。表証（微熱・寒気）と裏証（腹痛・吐き気）が併存。",
+      caution: "甘草・黄芩含有。間質性肺炎注意。",
+      memory_point: "小柴胡湯と桂枝湯を半分ずつ合わせた萬能処方。"
+    },
+
+    // --- 瀉下剤 (4) ---
+    {
+      id: "k15", name: "三黄瀉心湯", yomi: "さんおうしゃしんとう", category: "瀉下剤",
+      ingredients: [{name:"黄連",yomi:"おうれん"}, {name:"黄芩",yomi:"おうごん"}, {name:"大黄",yomi:"だいおう"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "邪熱内盛・迫血妄行", zofu: "心・胃・大腸", chihou: "瀉火解毒・清熱通便" },
+      hoshosotai: { ho: "三黄瀉心湯", sho: "のぼせ気味で顔面紅潮し、精神不安、便秘傾向のもの" },
+      standard_disease: "高血圧ののぼせ、不眠、便秘、鼻血",
+      origin: "金匱要略",
+      features: "黄連・黄芩・大黄の3味（三黄）。実熱でのぼせと便秘、出血傾向のある場合。",
+      caution: "下剤成分（センノシド）含有。虚弱者・妊婦注意。",
+      memory_point: "瀉心湯の代表。3つの「黄」で心火を清め便を通す。"
+    },
+    {
+      id: "k16", name: "防風通聖散", yomi: "ぼうふうつうしょうさん", category: "瀉下剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"川芎",yomi:"せんきゅう"}, {name:"山梔子",yomi:"さんしし"}, {name:"連翹",yomi:"れんぎょう"}, {name:"薄荷",yomi:"はっか"}, {name:"生姜",yomi:"しょうきょう"}, {name:"荊芥",yomi:"けいがい"}, {name:"防風",yomi:"ぼうふう"}, {name:"麻黄",yomi:"まおう"}, {name:"大黄",yomi:"だいおう"}, {name:"芒硝",yomi:"ぼうしょう"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"桔梗",yomi:"ききょう"}, {name:"黄芩",yomi:"おうごん"}, {name:"甘草",yomi:"かんぞう"}, {name:"石膏",yomi:"せっこう"}, {name:"滑石",yomi:"かせき"}],
+      tcm: { hachiko: "表裏・熱・実", kiketsu: "風熱湿熱・表裏宜通", zofu: "肺・胃・大腸", chihou: "疎風宣肺・瀉熱通便" },
+      hoshosotai: { ho: "防風通聖散", sho: "腹部に皮下脂肪が多く、便秘がちな実証の肥満症" },
+      standard_disease: "肥満症、便秘、高血圧の随伴症状、ニキビ",
+      origin: "宣明論",
+      features: "18生薬構成。発汗・利尿・便秘解消（宣通表裏）で肥満と皮下脂肪を改善。",
+      caution: "麻黄・大黄・芒硝・甘草・山梔子等多数含有。体質を見極める。",
+      memory_point: "太鼓腹の実証肥満に。表裏の毒素を汗と便と尿で出す。"
+    },
+    {
+      id: "k17", name: "麻子仁丸", yomi: "ましにんがん", category: "瀉下剤",
+      ingredients: [{name:"麻子仁",yomi:"ましにん"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"枳実",yomi:"きじつ"}, {name:"厚朴",yomi:"こうぼく"}, {name:"大黄",yomi:"だいおう"}, {name:"杏仁",yomi:"きょうにん"}],
+      tcm: { hachiko: "裏・熱・虚実夾雑（津液不足）", kiketsu: "腸胃燥熱・津液不足", zofu: "大腸・脾", chihou: "潤腸通便" },
+      hoshosotai: { ho: "麻子仁丸", sho: "高齢者や体力が低下した人のコロコロした硬い便の便秘" },
+      standard_disease: "弛緩性便秘、高齢者・習慣性便秘",
+      origin: "傷寒論",
+      features: "麻子仁・杏仁の油脂分で腸を潤し（潤腸）、コロコロ便（兎糞状）をスムーズに排泄。",
+      caution: "大黄含有。激しいお腹の下痢には不適。",
+      memory_point: "麻子仁＝ゴマのような油脂。コロコロ硬い便に潤腸作用。"
+    },
+    {
+      id: "k18", name: "乙字湯", yomi: "おつじとう", category: "瀉下剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"甘草",yomi:"かんぞう"}, {name:"升麻",yomi:"しょうま"}, {name:"大黄",yomi:"だいおう"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "湿熱下注・気虚下陥", zofu: "大腸・肛門", chihou: "清熱涼血・升提通便" },
+      hoshosotai: { ho: "乙字湯", sho: "いぼ痔、きれ痔で出血や痛みを伴うもの、便秘がち" },
+      standard_disease: "痔核（いぼ痔）、裂肛（きれ痔）、痔出血",
+      origin: "原南陽創方",
+      features: "日本創方。升麻・柴胡の「升提作用（持ち上げる）」と大黄で痔・便秘を改善。",
+      caution: "下痢しやすい人・妊婦注意（大黄）。",
+      memory_point: "江戸時代の原南陽作。痔のファーストチョイス。"
+    },
+
+    // --- 温補剤 (3) ---
+    {
+      id: "k19", name: "真武湯", yomi: "しんぶとう", category: "温補剤",
+      ingredients: [{name:"茯苓",yomi:"ぶくりょう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"白朮",yomi:"びゃくじゅtsu"}, {name:"生姜",yomi:"しょうきょう"}, {name:"附子",yomi:"ぶし"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "脾腎陽虚・水気凌心", zofu: "脾・腎", chihou: "温陽利水" },
+      hoshosotai: { ho: "真武湯", sho: "新陳代謝が低下し、冷えがあり、めまい、下痢しやすいもの" },
+      standard_disease: "慢性下痢、めまい、慢性腎炎、冷え性",
+      origin: "傷寒論",
+      features: "玄武（温陽）の象徴。附子で腎陽を温め、水滞によるふわふわ目眩・慢性下痢を止める。",
+      caution: "附子含有。熱証（のぼせ）の人には不適。",
+      memory_point: "附子＋茯苓・白朮。新陳代謝低下・全身冷え・ふわふわめまい。"
+    },
+    {
+      id: "k20", name: "苓姜朮甘湯", yomi: "りょうきょうじゅつかんとう", category: "温補剤",
+      ingredients: [{name:"茯苓",yomi:"ぶくりょう"}, {name:"乾姜",yomi:"かんきょう"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "寒湿下注", zofu: "腎・腰部", chihou: "温中散寒・健脾利湿" },
+      hoshosotai: { ho: "苓姜朮甘湯", sho: "腰から下が冷えて痛み、腰に水袋をつけているように重いもの" },
+      standard_disease: "腰痛、坐骨神経痛、夜間尿",
+      origin: "金匱要略",
+      features: "「腰から下が重く冷える」特有の症状に。腰の冷え・水溜まり感を乾姜で温め去る。",
+      caution: "甘草含有。",
+      memory_point: "腰下が帯のように重く冷えて痛む＝苓姜朮甘湯。"
+    },
+    {
+      id: "k21", name: "柴胡桂枝乾姜湯", yomi: "さいこけいしかんきょうとう", category: "温補剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"桂皮",yomi:"けいひ"}, {name:"乾姜",yomi:"かんきょう"}, {name:"黄芩",yomi:"おうごん"}, {name:"瓜呂根",yomi:"かろこん"}, {name:"牡蛎",yomi:"ぼれい"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "半表半裏寒熱錯雑・虚", kiketsu: "少陽病虚証・胆熱脾寒", zofu: "胆・脾", chihou: "和解少陽・温脾生津" },
+      hoshosotai: { ho: "柴胡桂枝乾姜湯", sho: "体力が弱く、冷え症で血色がわるく、動悸や頭の汗があるもの" },
+      standard_disease: "神経症、更年期障害、不眠、冷え性",
+      origin: "傷寒論",
+      features: "「上熱下寒（頭は熱く汗・足は冷える）」の虚弱者の神経症・動悸に。",
+      caution: "甘草・黄芩含有。",
+      memory_point: "冷えがある虚弱者の柴胡剤。頭の汗・動悸・神経過敏。"
+    },
+
+    // --- 気剤 (7) ---
+    {
+      id: "k22", name: "半夏厚朴湯", yomi: "はんげこうぼくとう", category: "気剤",
+      ingredients: [{name:"半夏",yomi:"はんげ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"厚朴",yomi:"こうぼく"}, {name:"蘇葉",yomi:"そよう"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "裏・虚実中間", kiketsu: "気滞痰凝（梅核気）", zofu: "肺・脾・肝", chihou: "行気散結・降逆化痰" },
+      hoshosotai: { ho: "半夏厚朴湯", sho: "喉に何か詰まったような違和感（ヒステリー球）、不安感、動悸" },
+      standard_disease: "咽喉頭異常感症、神経性胃炎、不安神経症",
+      origin: "金匱要略",
+      features: "「梅核気（喉に梅の種が詰まった感じ・呑み込めず吐き出せない）」の特効薬。",
+      caution: "燥湿作用が強いため、乾燥体質（陰虚）は注意。",
+      memory_point: "半夏・厚朴・紫蘇葉。喉のつまり・不安感・気鬱の巡りを改善。"
+    },
+    {
+      id: "k23", name: "苓桂朮甘湯", yomi: "りょうけいじゅつかんとう", category: "気剤",
+      ingredients: [{name:"茯苓",yomi:"ぶくりょう"}, {name:"桂皮",yomi:"けいひ"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "水飲上衝・気上衝", zofu: "心・脾", chihou: "健脾利水・温陽化飲" },
+      hoshosotai: { ho: "苓桂朮甘湯", sho: "めまい、立ちくらみ、動悸、頭痛があり水滞傾向のもの" },
+      standard_disease: "立ちくらみ、めまい（メニエール）、動悸、神経症",
+      origin: "傷寒論",
+      features: "「水毒（水滞）」による気の上衝（めまい・立ちくらみ・動悸）を鎮める代表処方。",
+      caution: "甘草含有。",
+      memory_point: "茯苓・桂皮・白朮・甘草。ぐるぐる立ちくらみめまい。"
+    },
+    {
+      id: "k24", name: "甘麦大棗湯", yomi: "かんばくだいそうとう", category: "気剤",
+      ingredients: [{name:"甘草",yomi:"かんぞう"}, {name:"小麦",yomi:"しょうばく"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・虚", kiketsu: "心陰不足・心気虚", zofu: "心・脾", chihou: "養心安神・和中緩急" },
+      hoshosotai: { ho: "甘麦大棗湯", sho: "夜泣き、ひつけ、急な興奮、あくびが出るもの" },
+      standard_disease: "小児の夜泣き、かんしゃく、ヒステリー",
+      origin: "金匱要略",
+      features: "甘草・小麦・大棗の3味（食品に近い）。急激な精神興奮・泣き叫びに安全に効く。",
+      caution: "甘草が高用量（偽アルドステロン症注意）。",
+      memory_point: "食べられる成分3つ。子供の夜泣き・感情の昂ぶり。"
+    },
+    {
+      id: "k25", name: "柴胡加竜骨牡蛎湯", yomi: "さいこかりゅうこつぼれいとう", category: "気剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"半夏",yomi:"はんげ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"桂皮",yomi:"けいひ"}, {name:"黄芩",yomi:"おうごん"}, {name:"大棗",yomi:"たいそう"}, {name:"人参",yomi:"にんじん"}, {name:"龍骨",yomi:"りゅうこつ"}, {name:"牡蛎",yomi:"ぼれい"}, {name:"乾姜",yomi:"かんきょう"}, {name:"大黄",yomi:"だいおう"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "気鬱化火・心神不安", zofu: "肝・心", chihou: "平肝潜陽・鎮心安神" },
+      hoshosotai: { ho: "柴胡加竜骨牡蛎湯", sho: "精神不安があって動悸、不眠、驚きやすい実証体質" },
+      standard_disease: "高血圧の随伴症状（不眠、不安）、神経症",
+      origin: "傷寒論",
+      features: "実証でイライラ・驚きやすく動悸がする人に。龍骨・牡蛎（重鎮安神）配合。",
+      caution: "大黄含有。胃腸の弱い人は注意。",
+      memory_point: "龍骨（化石）＋牡蛎（カキ殻）で昂ぶった精神を鎮圧。"
+    },
+    {
+      id: "k26", name: "桂枝加竜骨牡蛎湯", yomi: "けいしかりゅうこつぼれいとう", category: "気剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"龍骨",yomi:"りゅうこつ"}, {name:"牡蛎",yomi:"ぼれい"}],
+      tcm: { hachiko: "表裏・虚", kiketsu: "陰陽両虚・心神失養", zofu: "心・腎", chihou: "調和陰陽・鎮心安神" },
+      hoshosotai: { ho: "桂枝加竜骨牡蛎湯", sho: "体力が極めて虚弱で、神経過敏、眼精疲労、夢精・神経症" },
+      standard_disease: "小児夜尿症、神経過敏、眼精疲労、男性不妊",
+      origin: "金匱要略",
+      features: "桂枝湯ベースの虚弱者用安神剤。神経が細く繊細で疲れ果てている人に。",
+      caution: "甘草含有。",
+      memory_point: "桂枝湯＋龍骨牡蛎。虚弱な人の神経過敏や夜尿症に。"
+    },
+    {
+      id: "k27", name: "釣藤散", yomi: "ちょうとうさん", category: "気剤",
+      ingredients: [{name:"釣藤鈎",yomi:"ちょうとうこう"}, {name:"橘皮",yomi:"きっぴ"}, {name:"半夏",yomi:"はんげ"}, {name:"麦門冬",yomi:"ばくもんどう"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"人参",yomi:"にんじん"}, {name:"防風",yomi:"ぼうふう"}, {name:"菊花",yomi:"きくか"}, {name:"石膏",yomi:"せっこう"}, {name:"甘草",yomi:"かんぞう"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "裏・虚実中間", kiketsu: "肝陽上亢・風痰", zofu: "肝・心", chihou: "平肝息風・清熱化痰" },
+      hoshosotai: { ho: "釣藤散", sho: "中年以降の高血圧傾向で、朝方の頭痛・めまい・肩こり" },
+      standard_disease: "慢性頭痛、高血圧傾向の頭痛、血管性認知症",
+      origin: "本事方",
+      features: "「朝方に起こる頭痛」に特効。釣藤鈎が脳血管の緊張を緩め平肝息風。",
+      caution: "石膏含むため冷えに注意。",
+      memory_point: "釣藤鈎＋菊花。中年以降の朝起きたときの慢性頭痛。"
+    },
+    {
+      id: "k28", name: "抑肝散", yomi: "よくかんさん", category: "気剤",
+      ingredients: [{name:"蒼朮",yomi:"そうじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"川芎",yomi:"せんきゅう"}, {name:"釣藤鈎",yomi:"ちょうとうこう"}, {name:"当帰",yomi:"とうき"}, {name:"柴胡",yomi:"さいこ"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "裏・虚実中間", kiketsu: "肝経風熱・肝気鬱結", zofu: "肝・心", chihou: "平肝息風・和血舒肝" },
+      hoshosotai: { ho: "抑肝散", sho: "神経が高ぶり、イライラ、怒りっぽい、歯ぎしり、認知症のBPSD" },
+      standard_disease: "認知症の周辺症状（イライラ）、小児夜泣き、不眠症",
+      origin: "保嬰撮要",
+      features: "肝（怒り・神経昂ぶり）を抑える。認知症の興奮・幻覚・子供の疳のむしに第一選択。",
+      caution: "甘草含有。高齢者の低カリウム血症に注意。",
+      memory_point: "釣藤鈎・柴胡・当帰。イライラ怒り・認知症のBPSD。"
+    },
+
+    // --- 補血剤 (7) ---
+    {
+      id: "k29", name: "当帰芍薬散", yomi: "とうきしゃくやくさん", category: "補血剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"沢瀉",yomi:"たくしゃ"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "血虚・水滞", zofu: "肝・脾", chihou: "養血和血・健脾利水" },
+      hoshosotai: { ho: "当帰芍薬散", sho: "体力が低下し、冷え症、貧血気味でむくみがある女性" },
+      standard_disease: "月経不順、冷え症、不妊症、妊娠中の安胎",
+      origin: "金匱要略",
+      features: "「血虚＋水滞」の二大病態に対応。婦人科疾患の聖薬（色白で冷え・むくみ）。",
+      caution: "胃腸障害を起こす場合がある。",
+      memory_point: "当帰・川芎・芍薬（補血）＋茯苓・白朮・沢瀉（利水）。"
+    },
+    {
+      id: "k30", name: "温清飲", yomi: "うんせいいん", category: "補血剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"地黄",yomi:"じおう"}, {name:"黄連",yomi:"おうれん"}, {name:"黄芩",yomi:"おうごん"}, {name:"黄柏",yomi:"おうばく"}, {name:"山梔子",yomi:"さんしし"}],
+      tcm: { hachiko: "裏・熱・虚実夾雑", kiketsu: "血虚熱盛・血熱妄行", zofu: "肝・心・生殖器", chihou: "養血清熱" },
+      hoshosotai: { ho: "温清飲", sho: "皮膚が乾燥して色つやが悪く、のぼせるものの生理不順・皮膚炎" },
+      standard_disease: "更年期障害、アトピー性皮膚炎、不正出血",
+      origin: "万病回春",
+      features: "四物湯（温める補血）＋黄連解毒湯（冷やす清熱）の合方。皮膚カサカサで赤み。",
+      caution: "地黄含有で胃もたれ、山梔子長期で腸管静脈硬化症に注意。",
+      memory_point: "四物湯（温）＋黄連解毒湯（清）＝温清飲。"
+    },
+    {
+      id: "k31", name: "芎帰膠艾湯", yomi: "きゅうききょうがいとう", category: "補血剤",
+      ingredients: [{name:"川芎",yomi:"せんきゅう"}, {name:"阿膠",yomi:"あきょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"艾葉",yomi:"がいよう"}, {name:"当帰",yomi:"とうき"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"地黄",yomi:"じおう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "衝任虚損・血虚有寒", zofu: "肝・衝任脈", chihou: "温経止血・養血安胎" },
+      hoshosotai: { ho: "芎帰膠艾湯", sho: "冷え症で貧血気味、出血が持続する不正出血や痔出血" },
+      standard_disease: "不正性器出血、月経過多、痔出血、切迫流産",
+      origin: "金匱要略",
+      features: "阿膠（ロバ皮ゼラチン）と艾葉（ヨモギ）の止血作用。冷えを伴う持続的出血に。",
+      caution: "胃重感注意（地黄・阿膠）。",
+      memory_point: "阿膠・艾葉でピタッと止血＆温める。"
+    },
+    {
+      id: "k32", name: "十全大補湯", yomi: "じゅうぜんだいほとう", category: "補血剤",
+      ingredients: [{name:"黄耆",yomi:"おうぎ"}, {name:"桂皮",yomi:"けいひ"}, {name:"人参",yomi:"にんじん"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"地黄",yomi:"じおう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "気血両虚", zofu: "脾・肺・肝", chihou: "温補気血" },
+      hoshosotai: { ho: "十全大補湯", sho: "病後・手術後の体力低下、疲労困憊、貧血、手足の冷え" },
+      standard_disease: "病後術後の体力低下、ガン化学療法副作用減軽",
+      origin: "和剤局方",
+      features: "八珍湯（四君子湯＋四物湯）に黄耆・桂皮を加えた「気血両虚」の代表万能補剤。",
+      caution: "胃腸障害時注意（地黄）。",
+      memory_point: "気血を「十全」に大いに補う。病後・癌化学療法の体力低下。"
+    },
+    {
+      id: "k33", name: "四物湯", yomi: "しもつとう", category: "補血剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"地黄",yomi:"じおう"}],
+      tcm: { hachiko: "裏・虚・寒熱中間", kiketsu: "血虚・営血不足", zofu: "肝", chihou: "補血和血・調経" },
+      hoshosotai: { ho: "四物湯", sho: "皮膚が乾燥しつやがなく、貧血気味で冷え症のもの" },
+      standard_disease: "血の道症、月経不順、冷え症、皮膚乾燥",
+      origin: "和剤局方",
+      features: "補血剤すべての基本骨格。当帰・川芎・芍薬・地黄の4生薬で血を生成・巡らせる。",
+      caution: "地黄含有のため胃腸虚弱者は食欲不振・下痢の恐れ。",
+      memory_point: "当帰・川芎・芍薬・地黄。補血のベース中のベース。"
+    },
+    {
+      id: "k34", name: "加味帰脾湯", yomi: "かみきひとう", category: "補血剤",
+      ingredients: [{name:"人参",yomi:"にんじん"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"黄耆",yomi:"おうぎ"}, {name:"当帰",yomi:"とうき"}, {name:"竜眼肉",yomi:"りゅうがんにく"}, {name:"酸棗仁",yomi:"さんそうにん"}, {name:"木香",yomi:"もっこう"}, {name:"遠志",yomi:"おんじ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"柴胡",yomi:"さいこ"}, {name:"山梔子",yomi:"さんしし"}],
+      tcm: { hachiko: "裏・虚・やや熱", kiketsu: "心脾両虚・気血両虚化火", zofu: "心・脾", chihou: "健脾養心・益気補血・清熱" },
+      hoshosotai: { ho: "加味帰脾湯", sho: "体力が低下し、貧血、心身疲労、不眠、不安・微熱" },
+      standard_disease: "不眠症、神経症、貧血、精神不安",
+      origin: "正体類要",
+      features: "帰脾湯に柴胡・山梔子を加え「心脾両虚（精神疲労と消化不良）」のイライラ・不眠を治療。",
+      caution: "甘草・山梔子含有。",
+      memory_point: "竜眼肉・酸棗仁（安神）＋柴胡山梔子。悩みすぎて眠れない人。"
+    },
+    {
+      id: "k35", name: "加味逍遥散", yomi: "かみしょうようさん", category: "補血剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"当帰",yomi:"とうき"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}, {name:"山梔子",yomi:"さんしし"}, {name:"薄荷",yomi:"はっか"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "裏・虚実中間・熱", kiketsu: "肝郁血虚・気鬱化火", zofu: "肝・脾", chihou: "疎肝解郁・健脾養血・清熱" },
+      hoshosotai: { ho: "加味逍遥散", sho: "虚弱体質で肩がこり、イライラ、のぼせ、冷え症、不定愁訴" },
+      standard_disease: "更年期障害、月経困難、自律神経失調症",
+      origin: "内科摘要",
+      features: "「更年期障害のファーストチョイス」。肝気鬱結からくるイライラ・ホットフラッシュに。",
+      caution: "山梔子長期投与の腸管静脈硬化症に注意。",
+      memory_point: "逍遥（ぶらぶら巡る）。イライラ・ホットフラッシュ・更年期。"
+    },
+
+    // --- 駆瘀血剤 (2) ---
+    {
+      id: "k36", name: "桂枝茯苓丸", yomi: "けいしぶくりょうがん", category: "駆瘀血剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}, {name:"桃仁",yomi:"とうかく/とうにん"}, {name:"芍薬",yomi:"しゃくやく"}],
+      tcm: { hachiko: "裏・実・寒熱中間", kiketsu: "瘀血阻滞", zofu: "肝・衝任脈・下焦", chihou: "活血化瘀・緩急止痛" },
+      hoshosotai: { ho: "桂枝茯苓丸", sho: "比較的体力が認められ、下腹部痛、肩こり、のぼせて足冷え" },
+      standard_disease: "子宮内膜症、月経異常、子宮筋腫、下腹部痛",
+      origin: "金匱要略",
+      features: "駆瘀血剤の代表作。「のぼせと足の冷え（のぼせ冷え）」下腹部小腹急結・圧痛に。",
+      caution: "妊婦禁忌（桃仁・牡丹皮の活血作用）。",
+      memory_point: "桃仁・牡丹皮で瘀血撃退。のぼせ足冷え・下腹部圧痛。"
+    },
+    {
+      id: "k37", name: "桃核承気湯", yomi: "とうかくじょうきとう", category: "駆瘀血剤",
+      ingredients: [{name:"桃仁",yomi:"とうにん"}, {name:"桂皮",yomi:"けいひ"}, {name:"大黄",yomi:"だいおう"}, {name:"芒硝",yomi:"ぼうしょう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "裏・熱・実", kiketsu: "太陽病不解・蓄血証", zofu: "下焦・大腸", chihou: "破血下瘀・瀉熱通便" },
+      hoshosotai: { ho: "桃核承気湯", sho: "体力が充実し、のぼせて便秘、精神不安、激しい下腹部痛" },
+      standard_disease: "月経困難、月経不順、便秘、腰痛、精神不安",
+      origin: "傷寒論",
+      features: "強力な駆瘀血＋瀉下剤。頑固な便秘・激しいイライラ・のぼせを伴う蓄血証に。",
+      caution: "大黄・芒硝・桃仁含有。妊婦・虚弱者禁忌。",
+      memory_point: "桃仁＋承気湯（大黄・芒硝）。激しいのぼせ便秘と狂乱症状。"
+    },
+
+    // --- 利水剤 (4) ---
+    {
+      id: "k38", name: "五苓散", yomi: "ごれいさん", category: "利水剤",
+      ingredients: [{name:"猪苓",yomi:"ちょれい"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"桂皮",yomi:"けいひ"}],
+      tcm: { hachiko: "表裏・虚実中間", kiketsu: "水湿内停・水不化気", zofu: "膀胱・脾", chihou: "利水滲湿・温陽化気" },
+      hoshosotai: { ho: "五苓散", sho: "口渇、尿量減少があり、吐き気、下痢、むくみ、頭痛" },
+      standard_disease: "二日酔い、急性胃腸炎、むくみ、水様性下痢",
+      origin: "傷寒論",
+      features: "「水不換（水分代謝異常）」を整える水分調整剤（水が余っていれば出し足りなければ保持）。",
+      caution: "副作用が極めて少ない安全な生薬構成。",
+      memory_point: "猪苓・沢瀉・白朮・茯苓・桂皮。喉が渇くのに尿が出ない・二日酔い。"
+    },
+    {
+      id: "k39", name: "猪苓湯", yomi: "ちょれいとう", category: "利水剤",
+      ingredients: [{name:"猪苓",yomi:"ちょれい"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"滑石",yomi:"かせき"}, {name:"阿膠",yomi:"あきょう"}],
+      tcm: { hachiko: "裏・熱・虚実夾雑", kiketsu: "水熱互結・陰虚血尿", zofu: "膀胱・腎", chihou: "利水清熱・養陰止血" },
+      hoshosotai: { ho: "猪苓湯", sho: "排尿痛、頻尿、残尿感、血尿があり喉が渇くもの" },
+      standard_disease: "尿路結石、膀胱炎、尿道炎",
+      origin: "傷寒論",
+      features: "五苓散から桂皮・白朮を除き滑石（清熱）と阿膠（止血・滋陰）を加えた排尿痛・尿路炎特効薬。",
+      caution: "胃重感注意（阿膠）。",
+      memory_point: "阿膠・滑石入り。残尿感・痛む膀胱炎・血尿に。"
+    },
+    {
+      id: "k40", name: "五淋散", yomi: "ごりんさん", category: "利水剤",
+      ingredients: [{name:"茯苓",yomi:"ぶくりょう"}, {name:"当帰",yomi:"とうき"}, {name:"赤芍薬",yomi:"せきしゃくやく"}, {name:"山梔子",yomi:"さんしし"}, {name:"黄芩",yomi:"おうごん"}, {name:"甘草",yomi:"かんぞう"}, {name:"地黄",yomi:"じおう"}, {name:"木通",yomi:"もくつう"}, {name:"滑石",yomi:"かせき"}, {name:"車前子",yomi:"しゃぜんし"}],
+      tcm: { hachiko: "裏・湿熱・実", kiketsu: "湿熱下注・膀胱気化不利", zofu: "膀胱", chihou: "清熱利湿・解毒和血" },
+      hoshosotai: { ho: "五淋散", sho: "頻尿、排尿痛、残尿感、尿の濁りがある慢性膀胱炎" },
+      standard_disease: "慢性膀胱炎、尿道炎",
+      origin: "和剤局方",
+      features: "慢性化した痛む排尿障害（五淋）に。利水＋清熱＋和血（生薬11種）。",
+      caution: "山梔子含有。",
+      memory_point: "慢性的な膀胱炎・頻尿・排尿の濁り・残尿感。"
+    },
+    {
+      id: "k41", name: "柴苓湯", yomi: "さいれいとう", category: "利水剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"人参",yomi:"にんじん"}, {name:"半夏",yomi:"はんげ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"猪苓",yomi:"ちょれい"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"桂皮",yomi:"けいひ"}],
+      tcm: { hachiko: "表裏合病・虚実中間", kiketsu: "少陽水不化", zofu: "肝胆・脾・膀胱", chihou: "和解少陽・利水滲湿" },
+      hoshosotai: { ho: "柴苓湯", sho: "吐き気、喉の渇き、尿量減少、下痢、浮腫を伴う急性胃腸炎" },
+      standard_disease: "急性胃腸炎、ステロイド減量化、腎炎、浮腫",
+      origin: "和剤局方",
+      features: "小柴胡湯＋五苓散の合方。ステロイド様消炎作用があり自己免疫疾患にも応用。",
+      caution: "間質性肺炎注意（黄芩含有）。",
+      memory_point: "小柴胡湯（抗炎症）＋五苓散（利水）の強力合方。"
+    },
+
+    // --- 健胃・整腸剤 (4) ---
+    {
+      id: "k42", name: "半夏瀉心湯", yomi: "はんげしゃしんとう", category: "健胃・整腸剤",
+      ingredients: [{name:"半夏",yomi:"はんげ"}, {name:"黄芩",yomi:"おうごん"}, {name:"黄連",yomi:"おうれん"}, {name:"人参",yomi:"にんじん"}, {name:"乾姜",yomi:"かんきょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・寒熱錯雑・虚実夾雑", kiketsu: "寒熱錯雑・心下痞硬", zofu: "脾・胃", chihou: "平調寒熱・辛開苦降" },
+      hoshosotai: { ho: "半夏瀉心湯", sho: "みぞおちが支え（心下痞）、吐き気、腹鳴、軟便・下痢" },
+      standard_disease: "神経性胃炎、口内炎、急慢性胃腸炎、宿酔",
+      origin: "傷寒論",
+      features: "「辛開苦降（黄連・黄芩で冷やし乾姜で温める）」の寒熱錯雑の胃薬。みぞおちの閊え・胃もたれ・下痢。",
+      caution: "甘草含有。",
+      memory_point: "みぞおちの閊え（心下痞）とゴロゴロ下痢・口内炎。"
+    },
+    {
+      id: "k43", name: "茯苓飲", yomi: "ぶくりょういん", category: "健胃・整腸剤",
+      ingredients: [{name:"茯苓",yomi:"ぶくりょう"}, {name:"人参",yomi:"にんじん"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"枳実",yomi:"きじつ"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "裏・虚", kiketsu: "脾胃気虚・水飲停滞", zofu: "胃・脾", chihou: "健脾和胃・行気消痰" },
+      hoshosotai: { ho: "茯苓飲", sho: "吐き気、胸やけ、胃たぽたぽ（ポチャポチャ振動水音）" },
+      standard_disease: "機能性ディスペプシア、胃下垂、胃炎",
+      origin: "金匱要略",
+      features: "胃の中に水が溜まり（胃生水）、胸やけ・げっぷ・胃内停水音がする場合に。",
+      caution: "甘草不使用。",
+      memory_point: "胃を叩くとポチャポチャ（胃内停水）音が鳴る人に。"
+    },
+    {
+      id: "k44", name: "平胃散", yomi: "へいいさん", category: "健胃・整腸剤",
+      ingredients: [{name:"蒼朮",yomi:"そうじゅつ"}, {name:"厚朴",yomi:"こうぼく"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"甘草",yomi:"かんぞう"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・湿・実", kiketsu: "湿滞脾胃", zofu: "脾・胃", chihou: "燥湿運脾・行気和胃" },
+      hoshosotai: { ho: "平胃散", sho: "食べ過ぎ・飲み過ぎで胃が重く、腹が張り、泥状便が出やすい" },
+      standard_disease: "食傷、胃もたれ、消化不良、急性胃腸炎",
+      origin: "和剤局方",
+      features: "「胃の中の湿（湿滞）を乾かす」。食べ過ぎ・消化不良で胃が重いときの実証薬。",
+      caution: "燥性が強いため陰虚（乾燥）体質には不適。",
+      memory_point: "蒼朮・厚朴・陳皮。食べ過ぎ重い胃・水様泥状便。"
+    },
+    {
+      id: "k45", name: "安中散", yomi: "あんちゅうさん", category: "健胃・整腸剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"延胡索",yomi:"えんごさく"}, {name:"牡蛎",yomi:"ぼれい"}, {name:"茴香",yomi:"ういきょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"縮砂",yomi:"しゅくしゃ"}, {name:"良姜",yomi:"りょうきょう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "脾胃虚寒・胃気痛", zofu: "胃", chihou: "温中散寒・和胃止痛" },
+      hoshosotai: { ho: "安中散", sho: "痩せ型で胃痛や胸やけがあり、温めるとお腹の痛みが和らぐもの" },
+      standard_disease: "神経性胃炎、慢性胃炎、胃痛",
+      origin: "和剤局方",
+      features: "「お腹を温めると楽になる胃痛（虚寒胃痛）」。延胡索で鎮痛、牡蛎で胃酸を抑える。",
+      caution: "熱感のある激しい胃炎には不適。",
+      memory_point: "温めると楽になる神経性の胃痛。延胡索の鎮痛効果。"
+    },
+
+    // --- 補液強壮剤 (10) ---
+    {
+      id: "k46", name: "人参湯", yomi: "にんじんとう", category: "補液強壮剤",
+      ingredients: [{name:"人参",yomi:"にんじん"}, {name:"甘草",yomi:"かんぞう"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"乾姜",yomi:"かんきょう"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "脾胃虚寒（理中）", zofu: "脾・胃", chihou: "温中健脾・補気" },
+      hoshosotai: { ho: "人参湯", sho: "胃腸が弱く冷え症で、みぞおちの支え、水様便、尿量が多いもの" },
+      standard_disease: "慢性胃炎、胃下垂、胃腸虚弱、手足の冷え",
+      origin: "傷寒論",
+      features: "理中丸と同義。お腹が冷えて痛む、胃液を吐く、水っぽい下痢を乾姜・人参で温め補う。",
+      caution: "甘草含有。",
+      memory_point: "人参・乾姜・白朮・甘草。お腹が冷えて下痢・胃痛。"
+    },
+    {
+      id: "k47", name: "六君子湯", yomi: "りっくんしとう", category: "補液強壮剤",
+      ingredients: [{name:"人参",yomi:"にんじん"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"甘草",yomi:"かんぞう"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"半夏",yomi:"はんげ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・虚・湿", kiketsu: "脾胃気虚・痰湿内阻", zofu: "脾・胃", chihou: "補気健脾・燥湿化痰" },
+      hoshosotai: { ho: "六君子湯", sho: "胃腸が弱く、食欲不振、みぞおちが支え、疲れやすく貧血傾向" },
+      standard_disease: "機能性ディスペプシア（FD）、食欲不振、胃炎",
+      origin: "正体類要",
+      features: "四君子湯（補気）＋二陳湯（痰湿除去）。グレリン（食欲増進ホルモン）分泌促進の科学的立証。",
+      caution: "甘草含有。",
+      memory_point: "胃腸虚弱・食欲不振の代表補気薬。食べられない人に。"
+    },
+    {
+      id: "k48", name: "補中益気湯", yomi: "ほちゅうえっきとう", category: "補液強壮剤",
+      ingredients: [{name:"人参",yomi:"にんじん"}, {name:"黄耆",yomi:"おうぎ"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"甘草",yomi:"かんぞう"}, {name:"当帰",yomi:"とうき"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"升麻",yomi:"しょうま"}, {name:"柴胡",yomi:"さいこ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・虚・清熱", kiketsu: "脾胃気虚・中気下陥", zofu: "脾・肺", chihou: "補中益気・升陽挙陥" },
+      hoshosotai: { ho: "補中益気湯", sho: "全身倦怠感、食欲不振、手足の怠さ、微熱、気力低下" },
+      standard_disease: "夏ばて、病後の体力低下、慢性疲労症候群",
+      origin: "内外傷弁惑論",
+      features: "「医王湯」。中気下陥（内臓下垂・脱肛）を持ち上げ（升麻・柴胡）、元気を強力に補う。",
+      caution: "甘草含有。",
+      memory_point: "手足がだるい、声が小さい、元気が全く出ない時の医王湯。"
+    },
+    {
+      id: "k49", name: "小建中湯", yomi: "しょうけんちゅうとう", category: "補液強壮剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"膠飴",yomi:"こうい"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "中焦虚寒・肝脾不和", zofu: "脾・胃", chihou: "温中補虚・和里緩急" },
+      hoshosotai: { ho: "小建中湯", sho: "体質虚弱で疲労しやすく、腹痛、動悸、手足のほてり・夜尿症" },
+      standard_disease: "小児虚弱体質、反復性腹痛、夜尿症、疲労困憊",
+      origin: "傷寒論",
+      features: "桂枝加芍薬湯に水飴（膠飴）を加えた甘い漢方。虚弱児童の発育促進・腹痛改善。",
+      caution: "糖尿病患者は糖分考慮（膠飴）。",
+      memory_point: "水飴（膠飴）で甘い。子供の腹痛や虚弱体質改善。"
+    },
+    {
+      id: "k50", name: "大建中湯", yomi: "だいけんちゅうとう", category: "補液強壮剤",
+      ingredients: [{name:"花椒",yomi:"かしょう"}, {name:"乾姜",yomi:"かんきょう"}, {name:"人参",yomi:"にんじん"}, {name:"膠飴",yomi:"こうい"}],
+      tcm: { hachiko: "裏・寒・極虚", kiketsu: "中寒陰盛・脾胃陽虚", zofu: "脾・胃・腸", chihou: "温中降逆・補虚止痛" },
+      hoshosotai: { ho: "大建中湯", sho: "お腹が冷えて痛み、腹部膨満感があり、腹中で蠕動運動が見えるもの" },
+      standard_disease: "術後イレウス予防、腹部膨満感、慢性便秘・腸閉塞",
+      origin: "金匱要略",
+      features: "日本で最も処方される漢方の一つ。花椒・乾姜の刺激でお腹を猛烈に温め腸管運動改善。",
+      caution: "甘草不使用。熱症状のある人には不適。",
+      memory_point: "花椒（山椒）＋乾姜＋水飴。お腹の冷え・術後イレウス（腸閉塞）予防。"
+    },
+    {
+      id: "k51", name: "八味地黄丸", yomi: "はちみじおうがん", category: "補液強壮剤",
+      ingredients: [{name:"地黄",yomi:"じおう"}, {name:"山茱萸",yomi:"さんしゅゆ"}, {name:"山薬",yomi:"さんやく"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}, {name:"桂皮",yomi:"けいひ"}, {name:"附子",yomi:"ぶし"}],
+      tcm: { hachiko: "裏・寒・虚", kiketsu: "腎陽虚・命門火衰", zofu: "腎", chihou: "補腎温陽" },
+      hoshosotai: { ho: "八味地黄丸", sho: "腰冷え、腰痛、頻尿・夜間尿、かすみ目、高齢者のフレイル" },
+      standard_disease: "前立腺肥大症、夜間頻尿、腰痛、白内障、糖尿病",
+      origin: "金匱要略",
+      features: "補腎剤の金字塔。六味丸に桂皮・附子を加えて腎陽（老化・下半身の冷え）を温める。",
+      caution: "地黄含有（胃障害）、附子含有。のぼせ・胃弱者注意。",
+      memory_point: "六味地黄丸＋桂皮・附子。老化・夜間頻尿・腰の冷え痛。"
+    },
+    {
+      id: "k52", name: "六味地黄丸", yomi: "ろくみじおうがん", category: "補液強壮剤",
+      ingredients: [{name:"地黄",yomi:"じおう"}, {name:"山茱萸",yomi:"さんしゅゆ"}, {name:"山薬",yomi:"さんやく"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}],
+      tcm: { hachiko: "裏・虚・熱（手足のほてり）", kiketsu: "腎陰虚", zofu: "腎・肝", chihou: "滋補肝腎" },
+      hoshosotai: { ho: "六味地黄丸", sho: "排尿困難、頻尿、むくみ、手足のほてり、口渇（冷えのない者）" },
+      standard_disease: "小児の発育不良、腎炎、糖尿病、排尿困難",
+      origin: "小児薬証直訣",
+      features: "腎陰虚（からだの潤い不足・ほてり）に対する「三補三瀉」の黄金比基本処方。",
+      caution: "地黄含有。",
+      memory_point: "八味丸から桂皮・附子を除いたもの。冷えがなく手足がほてる人。"
+    },
+    {
+      id: "k53", name: "杞菊地黄丸", yomi: "こぎくじおうがん", category: "補液強壮剤",
+      ingredients: [{name:"地黄",yomi:"じおう"}, {name:"山茱萸",yomi:"さんしゅゆ"}, {name:"山薬",yomi:"さんやく"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}, {name:"枸杞子",yomi:"くこし"}, {name:"菊花",yomi:"きくか"}],
+      tcm: { hachiko: "裏・虚・熱", kiketsu: "肝腎陰虚・目失所養", zofu: "肝・腎・目", chihou: "滋補肝腎・明目" },
+      hoshosotai: { ho: "杞菊地黄丸", sho: "かすみ目、つかれ目、のぼせ、頭重、めまい" },
+      standard_disease: "眼精疲労、かすみ目、高血圧随伴症状",
+      origin: "医級",
+      features: "六味地黄丸にクコの実（枸杞子）と菊花を加えた目専門の滋養強壮剤。",
+      caution: "地黄含有。",
+      memory_point: "クコの実＋菊花で目の疲れ・霞み目・ドライアイに特効。"
+    },
+    {
+      id: "k54", name: "牛車腎気丸", yomi: "ごしゃじんきがん", category: "補液強壮剤",
+      ingredients: [{name:"地黄",yomi:"じおう"}, {name:"山茱萸",yomi:"さんしゅゆ"}, {name:"山薬",yomi:"さんやく"}, {name:"沢瀉",yomi:"たくしゃ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牡丹皮",yomi:"ぼたんぴ"}, {name:"桂皮",yomi:"けいひ"}, {name:"附子",yomi:"ぶし"}, {name:"牛膝",yomi:"ごしつ"}, {name:"車前子",yomi:"しゃぜんし"}],
+      tcm: { hachiko: "裏・寒・虚（水滞著明）", kiketsu: "腎陽虚・水湿内停", zofu: "腎・膀胱", chihou: "温腎利水" },
+      hoshosotai: { ho: "牛車腎気丸", sho: "高齢者で下肢の冷え、浮腫、しびれ、排尿障害" },
+      standard_disease: "糖尿病性神経障害のしびれ、前立腺肥大症、下肢浮腫",
+      origin: "済生方",
+      features: "八味地黄丸に牛膝（下半身へ薬効誘導）と車前子（利尿）を加えた強い浮腫・しびれ改善薬。",
+      caution: "地黄・附子含有。",
+      memory_point: "八味地黄丸＋牛膝＋車前子。下半身の強力なむくみ・しびれ。"
+    },
+    {
+      id: "k55", name: "清心蓮子飲", yomi: "せいしんれんしいん", category: "補液強壮剤",
+      ingredients: [{name:"蓮肉",yomi:"れんにく"}, {name:"人参",yomi:"にんじん"}, {name:"黄耆",yomi:"おうぎ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"黄芩",yomi:"おうごん"}, {name:"地骨皮",yomi:"じこっぴ"}, {name:"麦門冬",yomi:"ばくもんどう"}, {name:"車前子",yomi:"しゃぜんし"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "裏・虚・熱", kiketsu: "心気虚・心火上炎・下焦湿熱", zofu: "心・腎・膀胱", chihou: "清心利湿・益気養陰" },
+      hoshosotai: { ho: "清心蓮子飲", sho: "全身倦怠感があり、残尿感、頻尿、排尿痛、口渇" },
+      standard_disease: "神経性頻尿、慢性膀胱炎、排尿痛、残尿感",
+      origin: "和剤局方",
+      features: "胃腸が弱くストレスを感じやすい人の排尿障害（残尿感・頻尿）。蓮肉が心を安定。",
+      caution: "甘草・黄芩含有。",
+      memory_point: "蓮の実（蓮肉）配合。胃腸が弱い人のストレス性残尿感。"
+    },
+
+    // --- 鎮咳去痰剤 (3) ---
+    {
+      id: "k56", name: "麻杏甘石湯", yomi: "まきょうかんせきとう", category: "鎮咳去痰剤",
+      ingredients: [{name:"麻黄",yomi:"まおう"}, {name:"杏仁",yomi:"きょうにん"}, {name:"甘草",yomi:"かんぞう"}, {name:"石膏",yomi:"せっこう"}],
+      tcm: { hachiko: "表裏・熱・実", kiketsu: "外感風熱・邪熱迫肺", zofu: "肺", chihou: "清熱宣肺・止咳平喘" },
+      hoshosotai: { ho: "麻杏甘石湯", sho: "激しい咳込み、ゼーゼーする喘鳴、汗が出て喉が渇く" },
+      standard_disease: "気管支喘息、小児喘息、小児気管支炎",
+      origin: "傷寒論",
+      features: "「麻黄で気管支を広げ石膏で熱を冷ます」。激しいコンコンという熱性の咳・喘息に。",
+      caution: "麻黄含有。高齢者や循環器疾患に注意。",
+      memory_point: "麻黄・杏仁・甘草・石膏の4味。激しい咳と汗・喉の渇き。"
+    },
+    {
+      id: "k57", name: "麦門冬湯", yomi: "ばくもんどうとう", category: "鎮咳去痰剤",
+      ingredients: [{name:"麦門冬",yomi:"ばくもんどう"}, {name:"半夏",yomi:"はんげ"}, {name:"人参",yomi:"にんじん"}, {name:"甘草",yomi:"かんぞう"}, {name:"粳米",yomi:"こうべい"}, {name:"大棗",yomi:"たいそう"}],
+      tcm: { hachiko: "裏・虚・燥", kiketsu: "肺胃陰虚・肺燥津傷", zofu: "肺・胃", chihou: "滋養肺胃・降逆下気" },
+      hoshosotai: { ho: "麦門冬湯", sho: "痰が切れにくくコンコンと激しく咳き込む、顔が赤くなる" },
+      standard_disease: "気管支炎、気管支喘息、ドライアイ・喉の乾燥",
+      origin: "金匱要略",
+      features: "「コンコンと咳き込んで顔が真っ赤になる乾き咳」。大量の麦門冬（粘液・潤い供給）。",
+      caution: "水様痰（冷え性のサラサラ痰）には逆効果。",
+      memory_point: "麦門冬が70％以上！乾燥した顔が赤くなる激しい咳。"
+    },
+    {
+      id: "k58", name: "柴朴湯", yomi: "さいぼくとう", category: "鎮咳去痰剤",
+      ingredients: [{name:"柴胡",yomi:"さいこ"}, {name:"黄芩",yomi:"おうごん"}, {name:"人参",yomi:"にんじん"}, {name:"半夏",yomi:"はんげ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"厚朴",yomi:"こうぼく"}, {name:"蘇葉",yomi:"そよう"}, {name:"茯苓",yomi:"ぶくりょう"}],
+      tcm: { hachiko: "表裏合病・虚実中間", kiketsu: "少陽鬱熱・気滞痰凝", zofu: "肝・胆・肺・脾", chihou: "和解少陽・降逆平喘" },
+      hoshosotai: { ho: "柴朴湯", sho: "気管支喘息、咳込み、心身疲労、喉の違和感" },
+      standard_disease: "小児気管支喘息、アトピー性咳嗽、神経性咳嗽",
+      origin: "和剤局方",
+      features: "小柴胡湯＋半夏厚朴湯の合方。ストレス（気滞）が誘発する喘息・長引く咳に。",
+      caution: "黄芩含有（間質性肺炎注意）。",
+      memory_point: "小柴胡湯（消炎）＋半夏厚朴湯（気うつ・喉つまり）。"
+    },
+
+    // --- 筋肉・関節鎮痛剤 (6) ---
+    {
+      id: "k59", name: "麻杏薏甘湯", yomi: "まきょうよくかんとう", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"麻黄",yomi:"まおう"}, {name:"杏仁",yomi:"きょうにん"}, {name:"薏苡仁",yomi:"よくいにん"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・寒湿・実", kiketsu: "風湿在表", zofu: "筋骨・関節", chihou: "疎風散寒・除湿通絡" },
+      hoshosotai: { ho: "麻杏薏甘湯", sho: "関節痛、筋肉痛、神経痛で夕方に腫れや痛みが強まるもの" },
+      standard_disease: "関節リウマチ初期、神経痛、いぼ",
+      origin: "金匱要略",
+      features: "ハトムギ（薏苡仁）大量配合。関節や筋肉に溜まった湿気（水滞）と痛みを追い払う。",
+      caution: "麻黄含有。",
+      memory_point: "薏苡仁（ハトムギ）で関節の湿（水分重み）と痛みを除去。"
+    },
+    {
+      id: "k60", name: "桂枝加朮附湯", yomi: "けいしかじゅつぶとう", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"桂皮",yomi:"けいひ"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"附子",yomi:"ぶし"}],
+      tcm: { hachiko: "表裏・寒湿・虚", kiketsu: "風寒湿痺・陽虚", zofu: "筋骨・関節", chihou: "温経散寒・祛風勝湿" },
+      hoshosotai: { ho: "桂枝加朮附湯", sho: "冷えると関節や筋肉が痛み、汗が出やすく身体が冷えるもの" },
+      standard_disease: "神経痛、関節痛、五十肩、冷え症の関節痛",
+      origin: "吉益東洞等日本運用",
+      features: "桂枝湯＋白朮＋附子。冷えと雨・湿気で悪化する温めると楽になる神経痛に。",
+      caution: "附子含有。",
+      memory_point: "附子＋白朮でお腹・関節の冷えと湿気を温めて治す。"
+    },
+    {
+      id: "k61", name: "芍薬甘草湯", yomi: "しゃくやくかんぞうとう", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"芍薬",yomi:"しゃくやく"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表裏・虚", kiketsu: "陰血不足・筋脈失養", zofu: "肝・脾・筋肉", chihou: "柔肝舒筋・緩急止痛" },
+      hoshosotai: { ho: "芍薬甘草湯", sho: "急激に起こる筋肉のつり・こむら返り・激しい腹痛" },
+      standard_disease: "こむら返り（足の攣り）、胆石症・尿路結石の疝痛",
+      origin: "傷寒論",
+      features: "「去風去痛の頓服薬」。即効性抜群。芍薬（筋を緩める）と甘草（急迫を和らげる）の2味のみ。",
+      caution: "甘草が高用量（4g/日）。連用・常用禁忌（偽アルドステロン症）。",
+      memory_point: "芍薬と甘草の2つだけ。足がつった時の神薬（速効性）。"
+    },
+    {
+      id: "k62", name: "五積散", yomi: "ごしゃくさん", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"蒼朮",yomi:"そうじゅつ"}, {name:"桔梗",yomi:"ききょう"}, {name:"枳実",yomi:"きじつ"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"厚朴",yomi:"こうぼく"}, {name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"白脂",yomi:"びゃくし"}, {name:"半夏",yomi:"はんげ"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"肉桂",yomi:"にっけい"}, {name:"乾姜",yomi:"かんきょう"}, {name:"麻黄",yomi:"まおう"}, {name:"甘草",yomi:"かんぞう"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "表裏・寒湿・虚実中間", kiketsu: "気・血・痰・湿・食の五積", zofu: "全身・関節・胃腸", chihou: "温経散寒・順気化痰・活血消積" },
+      hoshosotai: { ho: "五積散", sho: "冷え性で冷房などで冷えると腰痛・神経痛・胃痛が起こるもの" },
+      standard_disease: "慢性腰痛、冷え込みによる神経痛、胃腸炎",
+      origin: "和剤局方",
+      features: "「5つの停滞（気・血・痰・湿・食）」を温めて追い払う16生薬の超複合温める処方。",
+      caution: "麻黄・甘草含有。",
+      memory_point: "エアコン冷えや寒さで痛み出す全身の痛みに温散。"
+    },
+    {
+      id: "k63", name: "防己黄耆湯", yomi: "ぼういおうぎとう", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"防己",yomi:"ぼうい"}, {name:"黄耆",yomi:"おうぎ"}, {name:"白朮",yomi:"びゃくじゅつ"}, {name:"生姜",yomi:"しょうきょう"}, {name:"大棗",yomi:"たいそう"}, {name:"甘草",yomi:"かんぞう"}],
+      tcm: { hachiko: "表・寒湿・虚", kiketsu: "気虚風湿", zofu: "表・脾・関節", chihou: "益気健脾・祛風利水" },
+      hoshosotai: { ho: "防己黄耆湯", sho: "色白で太り気味、汗をかきやすく、膝関節が腫れて痛む水太り体質" },
+      standard_disease: "変形性膝関節症、水太り肥満症、多汗症",
+      origin: "金匱要略",
+      features: "「水太り・汗かき・色白・ぽちゃぽちゃ体質」の関節水腫（膝に水が溜まる）に防己・黄耆が効く。",
+      caution: "防己の腎毒性リスク（日本産粉末は安全確認済み）。",
+      memory_point: "防己（痛みを止める）＋黄耆（固表・水出し）。水太りと膝水腫。"
+    },
+    {
+      id: "k64", name: "疎経活血湯", yomi: "そけいかっけつとう", category: "筋肉・関節鎮痛剤",
+      ingredients: [{name:"当帰",yomi:"とうき"}, {name:"川芎",yomi:"せんきゅう"}, {name:"芍薬",yomi:"しゃくやく"}, {name:"地黄",yomi:"じおう"}, {name:"蒼朮",yomi:"そうじゅつ"}, {name:"桃仁",yomi:"とうにん"}, {name:"茯苓",yomi:"ぶくりょう"}, {name:"牛膝",yomi:"ごしつ"}, {name:"威霊仙",yomi:"いれいせん"}, {name:"防己",yomi:"ぼうい"}, {name:"羌活",yomi:"きょうかつ"}, {name:"防風",yomi:"ぼうふう"}, {name:"白芷",yomi:"びゃくし"}, {name:"龍胆",yomi:"りゅうたん"}, {name:"陳皮",yomi:"ちんぴ"}, {name:"甘草",yomi:"かんぞう"}, {name:"生姜",yomi:"しょうきょう"}],
+      tcm: { hachiko: "裏・寒湿・虚実夾雑", kiketsu: "気血両虚・風湿瘀血阻絡", zofu: "経絡・筋骨", chihou: "養血活血・祛風除湿・通絡止痛" },
+      hoshosotai: { ho: "疎経活血湯", sho: "関節痛、神経痛、腰痛、筋肉痛で夜間に痛みが激しくなるもの" },
+      standard_disease: "坐骨神経痛、慢性腰痛、関節痛",
+      origin: "万病回春",
+      features: "17生薬配合。「夜間や風呂上がり・冷えで痛む神経痛（坐骨神経痛）」に特効。",
+      caution: "地黄・桃仁・防己含有。",
+      memory_point: "四物湯ベースに威霊仙・牛膝・防己を加えた坐骨神経痛の特効薬。"
+    }
+  ];
+
+  /* ==========================================
+     データベース: 生薬完全定義 (64処方構成生薬を全網羅)
+     ========================================== */
+  const SHOYAKU_DATABASE = [
+    { id: "s1", name: "甘草", yomi: "かんぞう", components: "グリチルリチン酸", action: "調和諸薬・急迫緩和・鎮痛・抗炎症", side_effects: "偽アルドステロン症（浮腫・高血圧・低カリウム血症）", desc: "最も多くの漢方（約7割）に配合される基本生薬。" },
+    { id: "s2", name: "麻黄", yomi: "まおう", components: "エフェドリン", action: "発汗解表・鎮咳平喘・利水消腫", side_effects: "交感神経刺激（動悸・不眠・血圧上昇・排尿障害）", desc: "強烈な発汗作用と気管支拡張作用を持つ。" },
+    { id: "s3", name: "桂皮", yomi: "けいひ", components: "シンナムアルデヒド", action: "発汗解肌・温経通脈・温陽化気", side_effects: "のぼせ・発疹", desc: "シナモンと同属。体を温め気血の巡りを助ける。" },
+    { id: "s4", name: "当帰", yomi: "とうき", components: "リグスチリド", action: "補血和血・調経止痛・潤腸通便", side_effects: "胃重感・下痢", desc: "婦人薬の最重要生薬。血を補い巡らせる。" },
+    { id: "s5", name: "芍薬", yomi: "しゃくやく", components: "ペオニフロリン", action: "養血柔肝・緩急止痛・斂陰和営", side_effects: "消化器症状", desc: "筋肉のこわばりや痛みを和らげるペオニフロリン含有。" },
+    { id: "s6", name: "地黄", yomi: "じおう", components: "カタルポ−ル", action: "滋陰補血・益精填髄", side_effects: "胃もたれ・食欲不振・下痢", desc: "潤いと血を補う強力な滋養薬。胃障害に注意。" },
+    { id: "s7", name: "茯苓", yomi: "ぶくりょう", components: "パチマン", action: "利水滲湿・健脾和胃・寧心安神", side_effects: "極めて少ない", desc: "マツホドの菌核。無駄な水を排出し心を落ち着かせる。" },
+    { id: "s8", name: "蒼朮", yomi: "そうじゅつ", components: "アトラクチロジン", action: "燥湿健脾・祛風散寒", side_effects: "口渇", desc: "ホソバオケラ根茎。体内の過剰な湿気（水滞）を強固に乾燥。" },
+    { id: "s9", name: "白朮", yomi: "びゃくじゅつ", components: "アトラクチロン", action: "健脾益気・燥湿利水・止汗安胎", side_effects: "極めて少ない", desc: "オケラ根茎。胃腸を丈夫にして水分代謝を改善。" },
+    { id: "s10", name: "黄連", yomi: "おうれん", components: "ベルベリン", action: "清熱燥湿・瀉火解毒", side_effects: "胃障害（冷やし過ぎ）", desc: "猛烈に苦い。心火・胃熱を激しく冷ます。" },
+    { id: "s11", name: "柴胡", yomi: "さいこ", components: "サイコスポニン", action: "和解少陽・疎肝解郁・升陽挙陥", side_effects: "間質性肺炎（黄芩併用時）", desc: "胸脇苦満を治し、肝（自律神経・イライラ）を和らげる。" },
+    { id: "s12", name: "半夏", yomi: "はんげ", components: "ホモゲンチジン酸", action: "燥湿化痰・降逆止嘔・消痞散結", side_effects: "口舌の痺れ（生の時）", desc: "カラスビシャク塊茎。吐き気止めと痰消しの第一選択。" },
+    { id: "s13", name: "沢瀉", yomi: "たくしゃ", components: "アリソール", action: "利水滲湿・清熱", side_effects: "極めて少ない", desc: "サジオモダカ根茎。不要な水分を強力に尿として排出。" },
+    { id: "s14", name: "防己", yomi: "ぼうい", components: "シノメニン", action: "祛風除湿・利水消腫・止痛", side_effects: "腎障害（アリストロキア酸混入注意）", desc: "ツヅラフジ科。関節の水腫・膝の腫れ痛みを抑える。" },
+    { id: "s15", name: "桃仁", yomi: "とうにん", components: "アミグダリン", action: "活血祛瘀・潤腸通便", side_effects: "流産・下痢", desc: "モモの種子。ドロドロ血（瘀血）を破砕除去する。" },
+    { id: "s16", name: "大黄", yomi: "だいおう", components: "センノシド", action: "瀉下通便・瀉火解毒・活血祛瘀", side_effects: "腹痛・下痢・子宮収縮", desc: "下剤成分センノシドを含む漢方下剤の主薬。" },
+    { id: "s17", name: "芒硝", yomi: "ぼうしょう", components: "硫酸ナトリウム", action: "瀉下通便・潤燥軟堅", side_effects: "激しい下痢", desc: "含水硫酸ナトリウム。硬い便を柔軟化して排出。" },
+    { id: "s18", name: "附子", yomi: "ぶし", components: "アコニチン（減毒後）", action: "回陽救逆・補火助陽・散寒止痛", side_effects: "附子中毒（動悸・痺れ・のぼせ）", desc: "トリカブト根。強烈に新陳代謝を高め全身を温める。" },
+    { id: "s19", name: "生姜", yomi: "しょうきょう", components: "ジンゲロール", action: "解表散寒・温中止嘔・化痰止咳", side_effects: "胃熱", desc: "ヒネショウガ。胃を温めて吐き気を抑え発汗を助ける。" },
+    { id: "s20", name: "大棗", yomi: "たいそう", components: "フルクトース・サポニン", action: "補中益気・養血安神・緩和薬性", side_effects: "極めて少ない", desc: "ナツメの果実。胃腸を補い緊張を緩和する。" },
+    { id: "s21", name: "人参", yomi: "にんじん", components: "ジンセノシド（サポニン）", action: "大補元気・補脾益肺・生津養血・安神", side_effects: "のぼせ・発熱（実証者）", desc: "オタネニンジン。漢方補気薬の絶対的王様。" },
+    { id: "s22", name: "黄耆", yomi: "おうぎ", components: "アストラガロシド", action: "補気昇陽・固表止汗・利水消腫", side_effects: "極めて少ない", desc: "気（バリア機能）を高め、無駄な汗やむくみを抑える。" },
+    { id: "s23", name: "川芎", yomi: "せんきゅう", components: "センキュウノリド", action: "活血行気・祛風止痛", side_effects: "胃部不快感", desc: "頭痛の聖薬。血を補うだけでなく巡らせて痛みを止める。" },
+    { id: "s24", name: "阿膠", yomi: "あきょう", components: "コラーゲン・ゼラチン", action: "滋陰補血・止血・安胎", side_effects: "胃障害", desc: "ロバの皮から精製したゼラチン。出血をピタッと止める。" },
+    { id: "s25", name: "艾葉", yomi: "がいよう", components: "シネオール", action: "温経止血・散寒止痛", side_effects: "極めて少ない", desc: "ヨモギの葉。下半身を温めて冷えによる出血を抑える。" },
+    { id: "s26", name: "陳皮", yomi: "ちんぴ", components: "ヘスペリジン", action: "理気健脾・燥湿化痰", side_effects: "極めて少ない", desc: "ミカンの皮。気の滞りを解き胃腸の動きを活発化。" },
+    { id: "s27", name: "竹茹", yomi: "ちくじょ", components: "バンブー成分", action: "清熱化痰・除煩止嘔", side_effects: "極めて少ない", desc: "ハチクの内皮。胃熱・胸の不快感や吐き気を抑える。" },
+    { id: "s28", name: "枳実", yomi: "きじつ", components: "シネフリン", action: "破気消積・化痰散結", side_effects: "腹痛", desc: "ダイダイの未成熟果実。お腹の固い張りを打ち破る。" },
+    { id: "s29", name: "厚朴", yomi: "こうぼく", components: "マグノロール", action: "行気燥湿・降逆平喘", side_effects: "極めて少ない", desc: "ホオノキ樹皮。お腹や胸のつかえ・膨満感を散らす。" },
+    { id: "s30", name: "龍骨", yomi: "りゅうこつ", components: "炭酸カルシウム", action: "重鎮安神・平肝潜陽・収斂固渋", side_effects: "極めて少ない", desc: "大型哺乳類の化石。興奮した神経をドシッと落ち着かせる。" },
+    { id: "s31", name: "牡蛎", yomi: "ぼれい", components: "炭酸カルシウム", action: "重鎮安神・平肝潜陽・制酸止痛", side_effects: "極めて少ない", desc: "イタボガキの貝殻。精神安定および過剰な胃酸抑制。" },
+    { id: "s32", name: "釣藤鈎", yomi: "ちょうとうこう", components: "コリノキセイン", action: "平肝息風・清熱平肝", side_effects: "極めて少ない", desc: "カギカズラのかぎ棘。脳血管の痙攣を緩め頭痛を止める。" }
+  ];
+
+  /* ==========================================
+     ゲームエンジン & ロジック
+     ========================================== */
+  class KampoGame {
+    constructor() {
+      this.unlockedKampo = new Set(JSON.parse(localStorage.getItem('unlockedKampo') || '["k1","k2"]'));
+      this.unlockedShoyaku = new Set(JSON.parse(localStorage.getItem('unlockedShoyaku') || '["s1","s2"]'));
+      this.wrongCounts = JSON.parse(localStorage.getItem('wrongCounts') || '{}');
+      this.history = JSON.parse(localStorage.getItem('history') || '[]');
+      this.audioEnabled = true;
+      this.audioCtx = null;
+
+      this.currentModeGroup = 'case'; // case or shoyaku
+      this.currentMode = 'bensho'; // bensho, hoso, seiyo / ingredient, component, sideeffect
+      this.currentLevel = 1;
+      this.quizQuestions = [];
+      this.currentQuizIdx = 0;
+      this.sessionResults = [];
+
+      this.initAudio();
+    }
+
+    initAudio() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audioCtx = new AudioContext();
+      } catch (e) {
+        console.warn('Web Audio API unsupported');
+      }
+    }
+
+    playTone(freq, type = 'sine', duration = 0.15, vol = 0.1) {
+      if (!this.audioEnabled || !this.audioCtx) return;
+      try {
+        if (this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume();
+        }
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    playCorrectSound() {
+      this.playTone(523.25, 'triangle', 0.1, 0.15); // C5
+      setTimeout(() => this.playTone(659.25, 'triangle', 0.1, 0.15), 100); // E5
+      setTimeout(() => this.playTone(783.99, 'triangle', 0.2, 0.15), 200); // G5
+    }
+
+    playIncorrectSound() {
+      this.playTone(200, 'sawtooth', 0.2, 0.2);
+      setTimeout(() => this.playTone(150, 'sawtooth', 0.3, 0.2), 150);
+    }
+
+    playL2StartSound() {
+      this.playTone(440, 'sine', 0.1, 0.2);
+      setTimeout(() => this.playTone(880, 'sine', 0.1, 0.2), 100);
+      setTimeout(() => this.playTone(1760, 'sine', 0.3, 0.25), 200);
+    }
+
+    toggleAudio() {
+      this.audioEnabled = !this.audioEnabled;
+      document.getElementById('btn-audio').innerText = this.audioEnabled ? '🔊 ON' : '🔇 OFF';
+    }
+
+    saveState() {
+      try {
+        localStorage.setItem('unlockedKampo', JSON.stringify(Array.from(this.unlockedKampo)));
+        localStorage.setItem('unlockedShoyaku', JSON.stringify(Array.from(this.unlockedShoyaku)));
+        localStorage.setItem('wrongCounts', JSON.stringify(this.wrongCounts));
+        localStorage.setItem('history', JSON.stringify(this.history));
+      } catch(e) {}
+      this.updateProgressUI();
+    }
+
+    updateProgressUI() {
+      const count = this.unlockedKampo.size;
+      const pct = Math.floor((count / KAMPO_DATABASE.length) * 100);
+      const remaining = KAMPO_DATABASE.length - count;
+      document.getElementById('zukan-progress-fill').style.width = pct + '%';
+      document.getElementById('zukan-progress-text').innerText = `漢方図鑑収集率: ${pct}% (あと ${remaining} 処方!)`;
+    }
+
+    switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+    }
+
+    goHome() {
+      this.switchView('view-home');
+      this.renderPickups();
+    }
+
+    renderPickups() {
+      const randomKampo = KAMPO_DATABASE[Math.floor(Math.random() * KAMPO_DATABASE.length)];
+      const randomShoyaku = SHOYAKU_DATABASE[Math.floor(Math.random() * SHOYAKU_DATABASE.length)];
+
+      document.getElementById('today-kampo-name').innerText = randomKampo.name;
+      document.getElementById('today-kampo-yomi').innerText = randomKampo.yomi;
+      document.getElementById('today-kampo-desc').innerText = randomKampo.hoshosotai.sho;
+
+      document.getElementById('today-shoyaku-name').innerText = randomShoyaku.name;
+      document.getElementById('today-shoyaku-yomi').innerText = randomShoyaku.yomi;
+      document.getElementById('today-shoyaku-desc').innerText = randomShoyaku.action;
+
+      this.todayKampo = randomKampo;
+      this.todayShoyaku = randomShoyaku;
+    }
+
+    showTodayKampoDetail() {
+      if (this.todayKampo) this.openKampoModal(this.todayKampo.id);
+    }
+
+    showTodayShoyakuDetail() {
+      if (this.todayShoyaku) this.openShoyakuModal(this.todayShoyaku.id);
+    }
+
+    // --- 出題モード選択画面制御 ---
+    openModeSelect(group) {
+      this.currentModeGroup = group;
+      const container = document.getElementById('mode-select-list');
+      container.innerHTML = '';
+
+      let modes = [];
+      if (group === 'case') {
+        modes = [
+          { id: 'bensho', title: '① 弁証論治モード', desc: '八綱・気血津液・臓腑から最適な漢方薬を選択' },
+          { id: 'hoso', title: '② 方証相対モード', desc: '特徴的な脈診・腹証・症候の組み合わせから直接選択' },
+          { id: 'seiyo', title: '③ 現代医学的病名モード', desc: '西洋医学的病名や臨床症候群から適応薬を選択' }
+        ];
+      } else {
+        modes = [
+          { id: 'ingredient', title: '① 構成生薬モード', desc: '処方に含まれる・含まれない構成生薬を問う' },
+          { id: 'component', title: '② 薬能・成分モード', desc: 'グリチルリチン・エフェドリン等の主要成分や薬効' },
+          { id: 'sideeffect', title: '③ 副作用・安全性モード', desc: '偽アルドステロン症や妊婦慎重投与の生薬・処方' }
+        ];
+      }
+
+      this.currentMode = modes[0].id;
+
+      modes.forEach((m, idx) => {
+        const div = document.createElement('div');
+        div.className = `select-item ${idx === 0 ? 'selected' : ''}`;
+        div.onclick = () => {
+          document.querySelectorAll('#mode-select-list .select-item').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          this.currentMode = m.id;
+        };
+        div.innerHTML = `
+          <div>
+            <div class="select-item-title">${m.title}</div>
+            <div class="select-item-desc">${m.desc}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      this.selectLevel(1);
+      this.switchView('view-select');
+    }
+
+    selectLevel(lvl) {
+      this.currentLevel = lvl;
+      document.getElementById('level-1-card').classList.toggle('selected', lvl === 1);
+      const l2Card = document.getElementById('level-2-card');
+      l2Card.classList.toggle('selected', lvl === 2);
+      l2Card.classList.toggle('level-2-active', lvl === 2);
+    }
+
+    // --- クイズセッション生成 ---
+    startQuizSession() {
+      if (this.currentLevel === 2) {
+        this.playL2StartSound();
+      } else {
+        this.playTone(440, 'sine', 0.1);
+      }
+
+      this.quizQuestions = this.generateQuestions(5);
+      this.currentQuizIdx = 0;
+      this.sessionResults = [];
+      this.renderQuizQuestion();
+      this.switchView('view-quiz');
+    }
+
+    generateQuestions(count) {
+      let pool = [...KAMPO_DATABASE];
+      // レベル2の場合は特徴的で難易度の高い問題を中心にする
+      if (this.currentLevel === 2) {
+        pool.sort(() => Math.random() - 0.5);
+      } else {
+        pool.sort(() => Math.random() - 0.5);
+      }
+
+      const questions = [];
+      for (let i = 0; i < count; i++) {
+        const target = pool[i % pool.length];
+        questions.push(this.createSingleQuestion(target));
+      }
+      return questions;
+    }
+
+    createSingleQuestion(target) {
+      let qText = "";
+      let qTag = "";
+      let correctAnswer = `${target.name}（${target.yomi}）`;
+      let dummyPool = KAMPO_DATABASE.filter(k => k.id !== target.id);
+      dummyPool.sort(() => Math.random() - 0.5);
+
+      if (this.currentModeGroup === 'case') {
+        if (this.currentMode === 'bensho') {
+          qTag = "【弁証論治モード】";
+          qText = `【八綱】${target.tcm.hachiko} / 【気血津液】${target.tcm.kiketsu}\n【臓腑】${target.tcm.zofu} の病態に対し、【治法】${target.tcm.chihou} を用いて治療すべき最適な処方はどれか？`;
+        } else if (this.currentMode === 'hoso') {
+          qTag = "【方証相対モード】";
+          qText = `「${target.hoshosotai.sho}」という方証相対に適合する処方はどれか？`;
+        } else {
+          qTag = "【現代医学的病名モード】";
+          qText = `主適応病名・症候：「${target.standard_disease}」。この西洋医学的症候に適応する処方はどれか？`;
+        }
+
+        const options = [correctAnswer];
+        for (let j = 0; j < 3; j++) {
+          const d = dummyPool[j];
+          options.push(`${d.name}（${d.yomi}）`);
+        }
+        options.sort(() => Math.random() - 0.5);
+
+        return {
+          target: target,
+          tag: qTag,
+          question: qText,
+          options: options,
+          correct: correctAnswer,
+          type: 'kampo'
+        };
+      } else {
+        // 生薬問題モード
+        if (this.currentMode === 'ingredient') {
+          qTag = "【構成生薬モード】";
+          const ingList = target.ingredients.map(ing => ing.name).join('・');
+          qText = `構成生薬：［ ${ingList} ］の組み合わせを持つ処方はどれか？`;
+
+          const options = [correctAnswer];
+          for (let j = 0; j < 3; j++) {
+            const d = dummyPool[j];
+            options.push(`${d.name}（${d.yomi}）`);
+          }
+          options.sort(() => Math.random() - 0.5);
+
+          return {
+            target: target,
+            tag: qTag,
+            question: qText,
+            options: options,
+            correct: correctAnswer,
+            type: 'kampo'
+          };
+        } else if (this.currentMode === 'component') {
+          qTag = "【薬能・成分モード】";
+          const randomShoyaku = SHOYAKU_DATABASE[Math.floor(Math.random() * SHOYAKU_DATABASE.length)];
+          qText = `生薬「${randomShoyaku.name}（${randomShoyaku.yomi}）」の主成分・薬理作用に関する記述として正しいものを選べ。`;
+          correctAnswer = `${randomShoyaku.components} ／ ${randomShoyaku.action}`;
+
+          let dummyShoyaku = SHOYAKU_DATABASE.filter(s => s.id !== randomShoyaku.id).sort(() => Math.random() - 0.5);
+          const options = [correctAnswer];
+          for (let j = 0; j < 3; j++) {
+            options.push(`${dummyShoyaku[j].components} ／ ${dummyShoyaku[j].action}`);
+          }
+          options.sort(() => Math.random() - 0.5);
+
+          return {
+            target: target,
+            shoyakuTarget: randomShoyaku,
+            tag: qTag,
+            question: qText,
+            options: options,
+            correct: correctAnswer,
+            type: 'shoyaku'
+          };
+        } else {
+          qTag = "【副作用・安全性モード】";
+          qText = `【注意・副作用】「${target.caution}」という注意事項・留意点を持つ処方はどれか？`;
+
+          const options = [correctAnswer];
+          for (let j = 0; j < 3; j++) {
+            const d = dummyPool[j];
+            options.push(`${d.name}（${d.yomi}）`);
+          }
+          options.sort(() => Math.random() - 0.5);
+
+          return {
+            target: target,
+            tag: qTag,
+            question: qText,
+            options: options,
+            correct: correctAnswer,
+            type: 'kampo'
+          };
+        }
+      }
+    }
+
+    renderQuizQuestion() {
+      const q = this.quizQuestions[this.currentQuizIdx];
+      document.getElementById('quiz-progress-text').innerText = `第 ${this.currentQuizIdx + 1} / ${this.quizQuestions.length} 問`;
+
+      const badge = document.getElementById('quiz-level-badge');
+      badge.innerText = `レベル ${this.currentLevel}` + (this.currentLevel === 2 ? ' ⚡' : '');
+      badge.className = `level-badge ${this.currentLevel === 2 ? 'level-2' : ''}`;
+
+      document.getElementById('quiz-question-tag').innerText = q.tag;
+      document.getElementById('quiz-question-text').innerText = q.question;
+
+      const container = document.getElementById('quiz-options-container');
+      container.innerHTML = '';
+
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<span>${opt}</span><span>▶</span>`;
+        btn.onclick = () => this.handleAnswerSelect(opt);
+        container.appendChild(btn);
+      });
+    }
+
+    handleAnswerSelect(selectedOpt) {
+      const q = this.quizQuestions[this.currentQuizIdx];
+      const isCorrect = (selectedOpt === q.correct);
+
+      if (isCorrect) {
+        this.playCorrectSound();
+        if (q.target) {
+          this.unlockedKampo.add(q.target.id);
+          q.target.ingredients.forEach(ing => {
+            const found = SHOYAKU_DATABASE.find(s => s.name === ing.name);
+            if (found) this.unlockedShoyaku.add(found.id);
+          });
+        }
+      } else {
+        this.playIncorrectSound();
+        if (q.target) {
+          this.wrongCounts[q.target.id] = (this.wrongCounts[q.target.id] || 0) + 1;
+        }
+      }
+
+      this.sessionResults.push({
+        question: q,
+        selected: selectedOpt,
+        isCorrect: isCorrect
+      });
+
+      this.history.push({
+        date: new Date().toISOString(),
+        isCorrect: isCorrect,
+        kampoId: q.target ? q.target.id : null
+      });
+
+      this.saveState();
+      this.showExplanationModal(q, selectedOpt, isCorrect);
+    }
+
+    showExplanationModal(q, selectedOpt, isCorrect) {
+      const modal = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content');
+
+      const target = q.target;
+      let ingHtml = "";
+      if (target) {
+        ingHtml = target.ingredients.map(ing => `${ing.name}（${ing.yomi}）`).join('、');
+      }
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <div class="modal-title" style="color: ${isCorrect ? '#2e7d32' : '#d32f2f'};">
+            ${isCorrect ? '⭕ 正解！' : '❌ 不正解...'}
+          </div>
+          <button class="icon-btn" style="background:#424242;" onclick="app.nextQuestionOrResult()">次へ ▶</button>
+        </div>
+
+        <div style="font-size:0.85rem; font-weight:bold;">
+          正解：<span style="color:var(--primary-dark);">${q.correct}</span>
+        </div>
+        ${!isCorrect ? `<div style="font-size:0.75rem; color:#d32f2f;">あなたの回答：${selectedOpt}</div>` : ''}
+
+        ${target ? `
+          <div class="explain-section">
+            <span class="explain-label">🏥 現代医学的視点（適応）</span>
+            ${target.standard_disease}
+          </div>
+
+          <div class="explain-section">
+            <span class="explain-label">☯️ 漢方医学的視点・弁証の根拠</span>
+            ・八綱弁証：${target.tcm.hachiko}<br>
+            ・病因病邪・気血津液：${target.tcm.kiketsu}<br>
+            ・臓腑弁証：${target.tcm.zofu}<br>
+            ・治法：${target.tcm.chihou}
+          </div>
+
+          <div class="explain-section">
+            <span class="explain-label">🌿 構成生薬</span>
+            ${ingHtml}
+          </div>
+
+          <div class="explain-section">
+            <span class="explain-label">💡 覚えるポイント（漢字・読み）</span>
+            【${target.name}（${target.yomi}）】<br>
+            ${target.memory_point}<br>
+            原典：${target.origin}
+          </div>
+        ` : `
+          <div class="explain-section">
+            <span class="explain-label">🍃 生薬解説</span>
+            ${q.shoyakuTarget ? `${q.shoyakuTarget.name}（${q.shoyakuTarget.yomi}）：${q.shoyakuTarget.desc}` : ''}
+          </div>
+        `}
+      `;
+
+      modal.classList.add('active');
+    }
+
+    nextQuestionOrResult() {
+      document.getElementById('modal-overlay').classList.remove('active');
+      this.currentQuizIdx++;
+      if (this.currentQuizIdx < this.quizQuestions.length) {
+        this.renderQuizQuestion();
+      } else {
+        this.renderResultScreen();
+      }
+    }
+
+    renderResultScreen() {
+      const modal = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content');
+
+      let correctCount = this.sessionResults.filter(r => r.isCorrect).length;
+
+      let listHtml = "";
+      this.sessionResults.forEach((res, idx) => {
+        listHtml += `
+          <div class="result-item ${res.isCorrect ? 'correct' : 'wrong'}">
+            <div><strong>第 ${idx + 1} 問:</strong> ${res.isCorrect ? '⭕ 正解' : '❌ 不正解'}</div>
+            <div style="font-size:0.75rem;">正解: ${res.question.correct}</div>
+            ${!res.isCorrect ? `
+              <div style="font-size:0.7rem; color:#d32f2f;">回答: ${res.selected}</div>
+              <button class="retry-single-btn" onclick="app.retrySingleQuestion(${idx})">🔁 この問題をすぐ解き直す</button>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <div class="modal-title">🎉 5問終了結果 (${correctCount} / 5 正解)</div>
+          <button class="icon-btn" style="background:var(--primary);" onclick="app.closeModalAndHome()">🏠 ホームへ</button>
+        </div>
+
+        <div class="result-list">
+          ${listHtml}
+        </div>
+
+        <button class="start-action-btn" onclick="app.closeModalAndHome()">終了してホームに戻る</button>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    retrySingleQuestion(resultIdx) {
+      document.getElementById('modal-overlay').classList.remove('active');
+      const item = this.sessionResults[resultIdx];
+      this.quizQuestions = [item.question];
+      this.currentQuizIdx = 0;
+      this.sessionResults = [];
+      this.renderQuizQuestion();
+      this.switchView('view-quiz');
+    }
+
+    closeModalAndHome() {
+      document.getElementById('modal-overlay').classList.remove('active');
+      this.goHome();
+    }
+
+    // --- 復習画面 ---
+    openReviewView() {
+      const worstList = document.getElementById('worst-kampos-list');
+      worstList.innerHTML = '';
+
+      const sortedWrong = Object.keys(this.wrongCounts)
+        .map(id => ({ id, count: this.wrongCounts[id] }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      if (sortedWrong.length === 0) {
+        worstList.innerHTML = '<div style="font-size:0.8rem; color:var(--text-sub);">まだ間違い記録がありません。クイズに挑戦しましょう！</div>';
+      } else {
+        sortedWrong.forEach(item => {
+          const k = KAMPO_DATABASE.find(x => x.id === item.id);
+          if (!k) return;
+          const div = document.createElement('div');
+          div.className = 'select-item';
+          div.innerHTML = `
+            <div>
+              <div class="select-item-title">${k.name}（${k.yomi}）</div>
+              <div class="select-item-desc">間違い回数: ${item.count} 回</div>
+            </div>
+            <button class="icon-btn" style="background:var(--accent);" onclick="app.startTargetedPractice('${k.id}')">集中練習 ▶</button>
+          `;
+          worstList.appendChild(div);
+        });
+      }
+
+      // カテゴリー別復習
+      const catList = document.getElementById('review-category-list');
+      catList.innerHTML = '';
+      const categories = ["発表剤", "清熱剤", "瀉下剤", "温補剤", "気剤", "補血剤", "駆瘀血剤", "利水剤", "健胃・整腸剤", "補液強壮剤", "鎮咳去痰剤", "筋肉・関節鎮痛剤"];
+
+      categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'select-item';
+        div.innerHTML = `
+          <div class="select-item-title">${cat}</div>
+          <button class="icon-btn" style="background:var(--primary);" onclick="app.startCategoryPractice('${cat}')">5問練習 ▶</button>
+        `;
+        catList.appendChild(div);
+      });
+
+      this.switchView('view-review');
+    }
+
+    startTargetedPractice(kampoId) {
+      const target = KAMPO_DATABASE.find(k => k.id === kampoId);
+      if (!target) return;
+      this.quizQuestions = [];
+      for (let i = 0; i < 5; i++) {
+        this.quizQuestions.push(this.createSingleQuestion(target));
+      }
+      this.currentQuizIdx = 0;
+      this.sessionResults = [];
+      this.renderQuizQuestion();
+      this.switchView('view-quiz');
+    }
+
+    startCategoryPractice(category) {
+      const catKampos = KAMPO_DATABASE.filter(k => k.category === category);
+      if (catKampos.length === 0) return;
+
+      this.quizQuestions = [];
+      for (let i = 0; i < 5; i++) {
+        const target = catKampos[i % catKampos.length];
+        this.quizQuestions.push(this.createSingleQuestion(target));
+      }
+      this.currentQuizIdx = 0;
+      this.sessionResults = [];
+      this.renderQuizQuestion();
+      this.switchView('view-quiz');
+    }
+
+    // --- 漢方図鑑 ---
+    openKampoZukan() {
+      this.renderKampoZukanTags();
+      this.renderKampoZukan();
+      this.switchView('view-zukan-kampo');
+    }
+
+    renderKampoZukanTags() {
+      const container = document.getElementById('filter-kampo-tags');
+      const categories = ["すべて", "発表剤", "清熱剤", "瀉下剤", "温補剤", "気剤", "補血剤", "駆瘀血剤", "利水剤", "健胃・整腸剤", "補液強壮剤", "鎮咳去痰剤", "筋肉・関節鎮痛剤"];
+
+      container.innerHTML = categories.map((c, i) => `
+        <button class="tag-btn ${i === 0 ? 'active' : ''}" onclick="app.filterKampoCategory('${c}', this)">${c}</button>
+      `).join('');
+      this.selectedCategory = "すべて";
+    }
+
+    filterKampoCategory(cat, btn) {
+      document.querySelectorAll('#filter-kampo-tags .tag-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      this.selectedCategory = cat;
+      this.renderKampoZukan();
+    }
+
+    renderKampoZukan() {
+      const query = document.getElementById('search-kampo').value.trim().toLowerCase();
+      const grid = document.getElementById('zukan-kampo-grid');
+      grid.innerHTML = '';
+
+      KAMPO_DATABASE.forEach(k => {
+        if (this.selectedCategory && this.selectedCategory !== "すべて" && k.category !== this.selectedCategory) return;
+        if (query && !k.name.includes(query) && !k.yomi.includes(query) && !k.standard_disease.includes(query)) return;
+
+        const isUnlocked = this.unlockedKampo.has(k.id);
+        const card = document.createElement('div');
+        card.className = `zukan-card ${isUnlocked ? '' : 'locked'}`;
+        card.onclick = () => {
+          if (isUnlocked) this.openKampoModal(k.id);
+        };
+
+        card.innerHTML = `
+          <span class="zukan-status-badge ${isUnlocked ? 'unlocked' : 'locked-text'}">
+            ${isUnlocked ? '解放済み' : '未解放'}
+          </span>
+          <div style="font-weight:bold; font-size:0.85rem; margin-top:12px;">${k.name}</div>
+          <div style="font-size:0.65rem; color:var(--text-sub);">${k.yomi}</div>
+          <div style="font-size:0.65rem; color:var(--primary); font-weight:bold; margin-top:2px;">${k.category}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    openKampoModal(kampoId) {
+      const k = KAMPO_DATABASE.find(x => x.id === kampoId);
+      if (!k) return;
+
+      const modal = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content');
+
+      const ingHtml = k.ingredients.map(ing => `${ing.name}（${ing.yomi}）`).join('、');
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color:var(--primary-dark);">${k.name}</div>
+            <div style="font-size:0.7rem; color:var(--text-sub);">${k.yomi}［${k.category}］</div>
+          </div>
+          <button class="icon-btn" style="background:#424242;" onclick="document.getElementById('modal-overlay').classList.remove('active')">✕ 閉じる</button>
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">🌿 構成生薬</span>
+          ${ingHtml}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">🎯 効能・主治＆主な適応症</span>
+          ${k.standard_disease}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">☯️ 弁証・体質（八綱・気血津液・臓腑）</span>
+          ・八綱：${k.tcm.hachiko}<br>
+          ・気血津液：${k.tcm.kiketsu}<br>
+          ・臓腑：${k.tcm.zofu}<br>
+          ・治法：${k.tcm.chihou}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">📜 原典</span>
+          ${k.origin}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">💡 方証相対＆覚えるポイント</span>
+          ${k.hoshosotai.sho}<br><br>
+          ${k.memory_point}
+        </div>
+
+        <div class="explain-section" style="border-left-color:var(--accent);">
+          <span class="explain-label" style="color:var(--accent);">⚠️ 服用上の注意・副作用</span>
+          ${k.caution}
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    // --- 生薬図鑑 ---
+    openShoyakuZukan() {
+      this.renderShoyakuZukan();
+      this.switchView('view-zukan-shoyaku');
+    }
+
+    renderShoyakuZukan() {
+      const query = document.getElementById('search-shoyaku').value.trim().toLowerCase();
+      const grid = document.getElementById('zukan-shoyaku-grid');
+      grid.innerHTML = '';
+
+      SHOYAKU_DATABASE.forEach(s => {
+        if (query && !s.name.includes(query) && !s.yomi.includes(query) && !s.components.includes(query)) return;
+
+        const isUnlocked = this.unlockedShoyaku.has(s.id);
+        const card = document.createElement('div');
+        card.className = `zukan-card ${isUnlocked ? '' : 'locked'}`;
+        card.onclick = () => {
+          if (isUnlocked) this.openShoyakuModal(s.id);
+        };
+
+        card.innerHTML = `
+          <span class="zukan-status-badge ${isUnlocked ? 'unlocked' : 'locked-text'}">
+            ${isUnlocked ? '解放済み' : '未解放'}
+          </span>
+          <div style="font-weight:bold; font-size:0.85rem; margin-top:12px;">${s.name}</div>
+          <div style="font-size:0.65rem; color:var(--text-sub);">${s.yomi}</div>
+          <div style="font-size:0.65rem; color:#1565c0; font-weight:bold; margin-top:2px;">${s.components}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    openShoyakuModal(shoyakuId) {
+      const s = SHOYAKU_DATABASE.find(x => x.id === shoyakuId);
+      if (!s) return;
+
+      const modal = document.getElementById('modal-overlay');
+      const content = document.getElementById('modal-content');
+
+      // 含有処方の抽出
+      const containingKampos = KAMPO_DATABASE.filter(k => k.ingredients.some(ing => ing.name === s.name))
+        .map(k => `${k.name}（${k.yomi}）`).join('、');
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <div>
+            <div class="modal-title" style="color:#1565c0;">${s.name}</div>
+            <div style="font-size:0.7rem; color:var(--text-sub);">${s.yomi}</div>
+          </div>
+          <button class="icon-btn" style="background:#424242;" onclick="document.getElementById('modal-overlay').classList.remove('active')">✕ 閉じる</button>
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">🧪 主要成分</span>
+          ${s.components}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">⚡ 薬能・薬理作用</span>
+          ${s.action}
+        </div>
+
+        <div class="explain-section" style="border-left-color:var(--accent);">
+          <span class="explain-label" style="color:var(--accent);">⚠️ 注意点・副作用</span>
+          ${s.side_effects}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">📦 含有する代表的な漢方薬</span>
+          ${containingKampos || '記載なし'}
+        </div>
+
+        <div class="explain-section">
+          <span class="explain-label">📖 特徴解説</span>
+          ${s.desc}
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    // --- 証シミュレーター ---
+    openShoSimulator() {
+      const container = document.getElementById('simulator-questions');
+      container.innerHTML = `
+        <div>
+          <label style="font-size:0.75rem; font-weight:bold;">1. 体力・体格の傾向</label>
+          <select id="sim-q1" class="search-input">
+            <option value="jitsu">ガッチリ・体力が充実している（実証）</option>
+            <option value="kyo">華奢・疲れやすい・体力が低い（虚証）</option>
+            <option value="chu">普通・中間証</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; font-weight:bold;">2. 冷え・のぼせの状態</label>
+          <select id="sim-q2" class="search-input">
+            <option value="ketsu">寒がり・手足や下半身が冷える（寒証）</option>
+            <option value="ne">暑がり・のぼせ・顔面紅潮（熱証）</option>
+            <option value="jonetsuka">上はのぼせるが足は冷える（上熱下寒）</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; font-weight:bold;">3. 胃腸の強度・食欲</label>
+          <select id="sim-q3" class="search-input">
+            <option value="ki">胃腸が弱い・食欲不振・もたれやすい（脾胃気虚）</option>
+            <option value="suikai">胃がポチャポチャする・吐き気（水滞）</option>
+            <option value="kan">胃腸は強く食欲旺盛</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; font-weight:bold;">4. 気分・精神状態・睡眠</label>
+          <select id="sim-q4" class="search-input">
+            <option value="kitai">イライラしやすい・喉のつまり感（気滞）</option>
+            <option value="fuman">精神不安・不眠・動悸（心神不安）</option>
+            <option value="normal">特に問題なし</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.75rem; font-weight:bold;">5. 主な困りごと症状</label>
+          <select id="sim-q5" class="search-input">
+            <option value="kaze">風邪初期・肩こり・頭痛</option>
+            <option value="mishima">むくみ・二日酔い・排尿障害</option>
+            <option value="ketsuo">生理痛・下腹部痛・血の道症</option>
+            <option value="hifu">湿疹・皮膚のかゆみ・赤み</option>
+          </select>
+        </div>
+      `;
+
+      document.getElementById('simulator-result').style.display = 'none';
+      this.switchView('view-simulator');
+    }
+
+    runShoSimulation() {
+      const q1 = document.getElementById('sim-q1').value;
+      const q2 = document.getElementById('sim-q2').value;
+      const q3 = document.getElementById('sim-q3').value;
+      const q4 = document.getElementById('sim-q4').value;
+      const q5 = document.getElementById('sim-q5').value;
+
+      let hachikoResult = "";
+      let kiketsuResult = "";
+      let recommendations = [];
+
+      if (q1 === 'jitsu') hachikoResult += "【実証】";
+      else if (q1 === 'kyo') hachikoResult += "【虚証】";
+      else hachikoResult += "【中間証】";
+
+      if (q2 === 'ketsu') hachikoResult += "・【寒証】";
+      else if (q2 === 'ne') hachikoResult += "・【熱証】";
+      else hachikoResult += "・【寒熱錯雑/上熱下寒】";
+
+      // 判定ロジック（多彩なバリエーション）
+      if (q5 === 'mishima') {
+        recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k38')); // 五苓散
+        recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k51')); // 八味地黄丸
+      } else if (q5 === 'kaze') {
+        if (q1 === 'jitsu') recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k2')); // 葛根湯
+        else recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k1')); // 桂枝湯
+      } else if (q5 === 'ketsuo') {
+        if (q1 === 'jitsu') recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k36')); // 桂枝茯苓丸
+        else recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k29')); // 当帰芍薬散
+      } else if (q4 === 'kitai') {
+        recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k22')); // 半夏厚朴湯
+        recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k35')); // 加味逍遥散
+      } else {
+        if (q3 === 'ki') recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k47')); // 六君子湯
+        else recommendations.push(KAMPO_DATABASE.find(k => k.id === 'k48')); // 補中益気湯
+      }
+
+      const body = document.getElementById('simulator-result-body');
+      let recHtml = recommendations.filter(Boolean).map(r => `
+        <div style="background:#e8f5e9; padding:8px; border-radius:6px; margin-top:6px; font-weight:bold;">
+          🌿 ${r.name}（${r.yomi}）<br>
+          <span style="font-size:0.7rem; font-weight:normal; color:#424242;">${r.hoshosotai.sho}</span>
+        </div>
+      `).join('');
+
+      body.innerHTML = `
+        <div><strong>八綱弁証判定:</strong> ${hachikoResult}</div>
+        <div><strong>推奨される方剤:</strong></div>
+        ${recHtml}
+      `;
+
+      document.getElementById('simulator-result').style.display = 'block';
+    }
+
+    // --- 学習記録 ---
+    openStatsView() {
+      const summary = document.getElementById('stats-summary');
+      const totalAnswers = this.history.length;
+      const correctAnswers = this.history.filter(h => h.isCorrect).length;
+      const rate = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+
+      summary.innerHTML = `
+        <div>・総解答問題数： <strong>${totalAnswers} 問</strong></div>
+        <div>・通算正答率： <strong>${rate}%</strong></div>
+        <div>・解放済み漢方： <strong>${this.unlockedKampo.size} / 64 処方</strong></div>
+        <div>・解放済み生薬： <strong>${this.unlockedShoyaku.size} 種</strong></div>
+      `;
+
+      this.renderChart();
+      this.switchView('view-stats');
+    }
+
+    renderChart() {
+      const canvas = document.getElementById('stats-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.clientWidth;
+      const h = canvas.height = canvas.clientHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 直近の履歴10件の正否を描画
+      const recent = this.history.slice(-10);
+      if (recent.length === 0) {
+        ctx.fillStyle = "#9e9e9e";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("学習データがまだありません", w / 4, h / 2);
+        return;
+      }
+
+      const barW = (w - 40) / 10;
+      recent.forEach((item, idx) => {
+        const x = 20 + idx * barW;
+        const barH = item.isCorrect ? h * 0.7 : h * 0.3;
+        const y = h - barH - 20;
+
+        ctx.fillStyle = item.isCorrect ? "#4caf50" : "#f44336";
+        ctx.fillRect(x, y, barW - 4, barH);
+      });
+    }
+
+    resetDataConfirm() {
+      if (confirm('すべての学習記録および図鑑解放状況を初期化しますか？')) {
+        localStorage.clear();
+        this.unlockedKampo = new Set(["k1", "k2"]);
+        this.unlockedShoyaku = new Set(["s1", "s2"]);
+        this.wrongCounts = {};
+        this.history = [];
+        this.saveState();
+        alert('データをリセットしました。');
+        this.goHome();
+      }
+    }
+  }
+
+  // アプリケーション初期化
+  let app;
+  window.addEventListener('DOMContentLoaded', () => {
+    app = new KampoGame();
+    app.saveState();
+    app.renderPickups();
+  });
+  </script>
+</body>
+</html>
